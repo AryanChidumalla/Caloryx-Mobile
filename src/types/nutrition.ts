@@ -65,11 +65,7 @@ export type MealCategoryBreakdown = {
 
 export type Sex = "male" | "female";
 
-export type ActivityLevel =
-  | "sedentary"
-  | "light"
-  | "moderate"
-  | "heavy";
+export type ActivityLevel = "sedentary" | "light" | "moderate" | "heavy";
 
 export type PrimaryGoal = "lose_fat" | "maintain" | "build_muscle";
 
@@ -83,6 +79,7 @@ export type UserProfile = {
   activity_level?: ActivityLevel | string | null;
   target_calorie?: number | null;
   created_at?: string;
+  primary_goal?: PrimaryGoal;
 };
 
 export type GuestProfile = Omit<UserProfile, "id" | "created_at"> & {

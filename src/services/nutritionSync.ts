@@ -226,16 +226,6 @@ export async function fetchUserProfile(
 export async function upsertUserProfile(
   profile: Partial<UserProfile> & { id: string },
 ): Promise<UserProfile> {
-  console.log("========== UPSERT PROFILE ==========");
-  console.log("profile:", JSON.stringify(profile));
-  console.log("profile.sex:", profile.sex);
-  console.log("profile.age:", profile.age);
-  console.log("profile.height:", profile.height);
-  console.log("profile.weight:", profile.weight);
-  console.log("profile.activity_level:", profile.activity_level);
-  console.log("profile.target_calorie:", profile.target_calorie);
-  console.log("====================================");
-
   const payload = {
     id: profile.id,
     username: profile.username ?? null,
@@ -244,13 +234,12 @@ export async function upsertUserProfile(
     height: profile.height != null ? Number(profile.height) : null,
     weight: profile.weight != null ? Number(profile.weight) : null,
     activity_level: profile.activity_level ?? null,
+    primary_goal: profile.primary_goal ?? null,
     target_calorie:
       profile.target_calorie != null
         ? Math.round(Number(profile.target_calorie))
         : null,
   };
-
-  console.log("PAYLOAD:", JSON.stringify(payload));
 
   const { data, error } = await supabase
     .from("profiles")

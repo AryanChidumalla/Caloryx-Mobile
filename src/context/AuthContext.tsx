@@ -87,7 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error("No authenticated user to save profile for.");
       }
 
-      console.log(profileData);
+      console.log("Saving profile:", profileData);
 
       const updated = await upsertUserProfile({
         ...profileData,

@@ -144,14 +144,10 @@ export default function GoalsSettingsScreen() {
   const recommendedStepGoal = STEP_RECOMMENDATIONS[activity];
 
   const displayedWaterGoal =
-    inputWaterGoal !== null
-      ? inputWaterGoal
-      : String(waterGoal || recommendedWaterGoal);
+    inputWaterGoal !== null ? inputWaterGoal : String(recommendedWaterGoal);
 
   const displayedStepGoal =
-    inputStepGoal !== null
-      ? inputStepGoal
-      : String(stepGoal || recommendedStepGoal);
+    inputStepGoal !== null ? inputStepGoal : String(recommendedStepGoal);
 
   /*
    * Load existing profile values.
@@ -186,6 +182,10 @@ export default function GoalsSettingsScreen() {
           profile.activity_level === "heavy"
         ) {
           setActivity(profile.activity_level as ActivityLevel);
+        }
+
+        if (profile.primary_goal) {
+          setGoal(profile.primary_goal);
         }
       } else if (isGuest) {
         const guestData = await getGuestProfile();
@@ -317,6 +317,7 @@ export default function GoalsSettingsScreen() {
       } else {
         await saveProfile({
           sex,
+          primary_goal: goal,
           age: Math.round(numAge),
           height: numHeight,
           weight: numWeight,
