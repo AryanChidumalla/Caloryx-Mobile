@@ -79,7 +79,7 @@ export type UserProfile = {
   activity_level?: ActivityLevel | string | null;
   target_calorie?: number | null;
   created_at?: string;
-  primary_goal?: PrimaryGoal;
+  primary_goal?: PrimaryGoal | null;
 };
 
 export type GuestProfile = Omit<UserProfile, "id" | "created_at"> & {

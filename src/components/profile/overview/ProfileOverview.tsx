@@ -54,7 +54,10 @@ export default function ProfileOverview({
         weight={profile?.weight}
       />
 
-      <ActivityGoalCard activityLevel={profile?.activity_level} />
+      <ActivityGoalCard
+        activityLevel={profile?.activity_level}
+        goal={profile?.primary_goal}
+      />
 
       <PersonalPlanCard
         calories={goals.calories}
