@@ -1,7 +1,6 @@
 import { colors } from "@/styles/global";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 type ProfileHeaderProps = {
@@ -50,11 +49,11 @@ export default function ProfileHeader({
 
       <TouchableOpacity
         style={styles.settingsBtn}
-        onPress={() => router.push("/profile/goals")}
+        onPress={() => router.push("/profile/settings")}
         activeOpacity={0.7}
         accessibilityLabel="Edit Goals"
       >
-        <Ionicons name="options-outline" size={18} color={colors.text} />
+        <Ionicons name="settings-outline" size={20} color={colors.text} />
       </TouchableOpacity>
     </View>
   );
@@ -125,8 +124,8 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   settingsBtn: {
-    width: 40,
-    height: 40,
+    width: 38,
+    height: 38,
     borderRadius: 12,
     backgroundColor: colors.surface,
     borderWidth: 1,

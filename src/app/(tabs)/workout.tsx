@@ -2,7 +2,7 @@ import ActiveWorkoutModal from "@/components/ActiveWorkoutModal";
 import CreateRoutineModal from "@/components/CreateRoutineModal";
 import EditWorkoutModal from "@/components/EditWorkoutModal";
 import RoutineCard from "@/components/RoutineCard";
-import WorkoutHistoryCard from "@/components/WorkoutHistoryCard";
+import WorkoutHistoryCard from "@/components/profile/history/WorkoutHistoryCard";
 import { useWorkout } from "@/context/WorkoutContext";
 import { colors, globalStyles } from "@/styles/global";
 import { WorkoutRoutine, WorkoutSession } from "@/types/workout";
@@ -408,11 +408,15 @@ export default function WorkoutScreen() {
         >
           {sessions.length === 0 ? (
             <View style={styles.emptyHistoryBox}>
-              <Ionicons name="time-outline" size={40} color={colors.textMuted} />
+              <Ionicons
+                name="time-outline"
+                size={40}
+                color={colors.textMuted}
+              />
               <Text style={styles.emptyTitle}>No past workouts yet</Text>
               <Text style={styles.emptySub}>
-                Start a routine or empty workout above. Finished sessions will be
-                logged here.
+                Start a routine or empty workout above. Finished sessions will
+                be logged here.
               </Text>
               <TouchableOpacity
                 style={styles.startFirstBtn}
@@ -421,7 +425,9 @@ export default function WorkoutScreen() {
                   handleStartBlank();
                 }}
               >
-                <Text style={styles.startFirstBtnText}>Start First Workout</Text>
+                <Text style={styles.startFirstBtnText}>
+                  Start First Workout
+                </Text>
               </TouchableOpacity>
             </View>
           ) : (
