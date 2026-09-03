@@ -51,12 +51,14 @@ export default function DashboardScreen() {
   const isCurrentDateToday = isToday(selectedDate);
 
   return (
-    <View style={[globalStyles.container, { paddingTop: insets.top }]}>
+    <View
+      style={[
+        globalStyles.container,
+        { paddingTop: insets.top, paddingBottom: insets.bottom },
+      ]}
+    >
       <ScrollView
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: insets.bottom + 24 },
-        ]}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl

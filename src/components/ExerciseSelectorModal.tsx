@@ -9,7 +9,6 @@ import {
   FlatList,
   Image,
   Modal,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -17,6 +16,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 type ExerciseSelectorModalProps = {
   visible: boolean;
@@ -233,7 +233,9 @@ export default function ExerciseSelectorModal({
                     setSelectedCategory(cat.key);
                   }}
                 >
-                  <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                  <Text
+                    style={[styles.chipText, active && styles.chipTextActive]}
+                  >
                     {cat.label}
                   </Text>
                 </TouchableOpacity>
@@ -252,10 +254,7 @@ export default function ExerciseSelectorModal({
               return (
                 <TouchableOpacity
                   key={eq.key}
-                  style={[
-                    styles.chipEquip,
-                    active && styles.chipEquipActive,
-                  ]}
+                  style={[styles.chipEquip, active && styles.chipEquipActive]}
                   onPress={() => {
                     Haptics.selectionAsync();
                     setSelectedEquipment(eq.key);

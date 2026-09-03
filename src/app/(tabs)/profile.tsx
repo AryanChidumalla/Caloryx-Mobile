@@ -176,12 +176,17 @@ export default function ProfileScreen() {
   };
 
   return (
-    <View style={[globalStyles.container, { paddingTop: insets.top }]}>
+    <View
+      style={[
+        globalStyles.container,
+        {
+          paddingTop: insets.top,
+          paddingBottom: insets.bottom,
+        },
+      ]}
+    >
       <ScrollView
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: insets.bottom + 28 },
-        ]}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl

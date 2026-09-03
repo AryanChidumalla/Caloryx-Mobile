@@ -3,11 +3,10 @@ import { colors } from "@/styles/global";
 import { Exercise, RoutineExercise } from "@/types/workout";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   Alert,
   Modal,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -15,6 +14,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import ExerciseSelectorModal from "./ExerciseSelectorModal";
 
 type CreateRoutineModalProps = {
@@ -174,7 +174,8 @@ export default function CreateRoutineModal({
                 />
                 <Text style={styles.emptyTitle}>No exercises added yet</Text>
                 <Text style={styles.emptySubtitle}>
-                  Add exercises from the library and configure default sets & reps.
+                  Add exercises from the library and configure default sets &
+                  reps.
                 </Text>
                 <TouchableOpacity
                   style={styles.emptyAddBtn}
@@ -185,7 +186,10 @@ export default function CreateRoutineModal({
               </View>
             ) : (
               exercises.map((ex, idx) => (
-                <View key={`${ex.exerciseName}-${idx}`} style={styles.exerciseCard}>
+                <View
+                  key={`${ex.exerciseName}-${idx}`}
+                  style={styles.exerciseCard}
+                >
                   <View style={styles.exTopRow}>
                     <View style={styles.exTitleContainer}>
                       <Text style={styles.exNumber}>{idx + 1}.</Text>

@@ -3,18 +3,18 @@ import { colors } from "@/styles/global";
 import { Exercise } from "@/types/workout";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Modal,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import ExerciseCard from "./ExerciseCard";
 import ExerciseSelectorModal from "./ExerciseSelectorModal";
 
@@ -194,7 +194,11 @@ export default function ActiveWorkoutModal({
             onPress={onClose}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
+            <Ionicons
+              name="chevron-down"
+              size={20}
+              color={colors.textSecondary}
+            />
           </TouchableOpacity>
         </View>
 
