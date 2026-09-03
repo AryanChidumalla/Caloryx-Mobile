@@ -1,5 +1,7 @@
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { HealthProvider } from "@/context/HealthContext";
 import { NutritionProvider } from "@/context/NutritionContext";
+import { WorkoutProvider } from "@/context/WorkoutContext";
 import { Redirect, Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
@@ -34,8 +36,12 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <AuthProvider>
         <NutritionProvider>
-          <StatusBar style="light" />
-          <RootNavigator />
+          <WorkoutProvider>
+            <HealthProvider>
+              <StatusBar style="light" />
+              <RootNavigator />
+            </HealthProvider>
+          </WorkoutProvider>
         </NutritionProvider>
       </AuthProvider>
     </SafeAreaProvider>

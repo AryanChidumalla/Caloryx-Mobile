@@ -11,7 +11,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router, useFocusEffect } from "expo-router";
-import React, { useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -269,7 +269,7 @@ export default function AddMealScreen() {
 
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         resetForm();
-        router.navigate("/(tabs)");
+        router.navigate("/(tabs)/nutrition");
       } else {
         await addMealEntry({
           name: name.trim(),
@@ -298,11 +298,14 @@ export default function AddMealScreen() {
 
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         resetForm();
-        router.navigate("/(tabs)");
+        router.navigate("/(tabs)/nutrition");
       }
     } catch (error) {
       console.error("Failed to save meal:", error);
-      Alert.alert("Unable to Save", "Something went wrong while saving this meal.");
+      Alert.alert(
+        "Unable to Save",
+        "Something went wrong while saving this meal.",
+      );
     }
   };
 
@@ -393,7 +396,9 @@ export default function AddMealScreen() {
                   name="search-outline"
                   size={15}
                   color={
-                    activeTab === "search" ? colors.background : colors.textSecondary
+                    activeTab === "search"
+                      ? colors.background
+                      : colors.textSecondary
                   }
                 />
                 <Text
@@ -420,7 +425,9 @@ export default function AddMealScreen() {
                   name="create-outline"
                   size={15}
                   color={
-                    activeTab === "manual" ? colors.background : colors.textSecondary
+                    activeTab === "manual"
+                      ? colors.background
+                      : colors.textSecondary
                   }
                 />
                 <Text
@@ -447,7 +454,9 @@ export default function AddMealScreen() {
                   name="bookmark-outline"
                   size={15}
                   color={
-                    activeTab === "saved" ? colors.background : colors.textSecondary
+                    activeTab === "saved"
+                      ? colors.background
+                      : colors.textSecondary
                   }
                 />
                 <Text
@@ -512,9 +521,12 @@ export default function AddMealScreen() {
                       size={32}
                       color={colors.textMuted}
                     />
-                    <Text style={styles.emptySearchTitle}>No matching food found</Text>
+                    <Text style={styles.emptySearchTitle}>
+                      No matching food found
+                    </Text>
                     <Text style={styles.emptySearchText}>
-                      Can't find this food in the database? Create a custom entry.
+                      Can't find this food in the database? Create a custom
+                      entry.
                     </Text>
                     <TouchableOpacity
                       style={styles.customFoodButton}
@@ -525,7 +537,11 @@ export default function AddMealScreen() {
                         setActiveTab("manual");
                       }}
                     >
-                      <Ionicons name="add" size={18} color={colors.background} />
+                      <Ionicons
+                        name="add"
+                        size={18}
+                        color={colors.background}
+                      />
                       <Text style={styles.customFoodButtonText}>
                         Create Custom Food
                       </Text>
@@ -568,7 +584,10 @@ export default function AddMealScreen() {
                       >
                         <View style={styles.foodResultContent}>
                           <View style={styles.foodNameRow}>
-                            <Text style={styles.foodResultName} numberOfLines={1}>
+                            <Text
+                              style={styles.foodResultName}
+                              numberOfLines={1}
+                            >
                               {food.name}
                             </Text>
                             {food.hindi_name && (
@@ -578,7 +597,7 @@ export default function AddMealScreen() {
                             )}
                           </View>
                           <Text style={styles.foodResultMeta}>
-                            {cal} kcal  •  {pro}g P  •  {carbsVal}g C  •  {fatVal}g F
+                            {cal} kcal • {pro}g P • {carbsVal}g C • {fatVal}g F
                           </Text>
                           {food.default_serving_unit && (
                             <Text style={styles.foodResultServing}>
@@ -641,7 +660,9 @@ export default function AddMealScreen() {
                       <Ionicons
                         name={item.icon}
                         size={14}
-                        color={isSelected ? colors.background : colors.textSecondary}
+                        color={
+                          isSelected ? colors.background : colors.textSecondary
+                        }
                       />
                       <Text
                         style={[
@@ -747,10 +768,7 @@ export default function AddMealScreen() {
                 <View style={[styles.inputGroup, { flex: 1 }]}>
                   <View style={styles.macroTag}>
                     <View
-                      style={[
-                        styles.tagDot,
-                        { backgroundColor: colors.carbs },
-                      ]}
+                      style={[styles.tagDot, { backgroundColor: colors.carbs }]}
                     />
                     <Text style={styles.tagText}>Carbs (g)</Text>
                   </View>
@@ -767,10 +785,7 @@ export default function AddMealScreen() {
                 <View style={[styles.inputGroup, { flex: 1 }]}>
                   <View style={styles.macroTag}>
                     <View
-                      style={[
-                        styles.tagDot,
-                        { backgroundColor: colors.fat },
-                      ]}
+                      style={[styles.tagDot, { backgroundColor: colors.fat }]}
                     />
                     <Text style={styles.tagText}>Fat (g)</Text>
                   </View>

@@ -5,7 +5,6 @@ import {
   fetchUserFoodLogs,
   insertFoodLog,
   updateFoodLog,
-  upsertUserProfile,
 } from "@/services/nutritionSync";
 import {
   DEFAULT_GOALS,
@@ -100,15 +99,12 @@ const NutritionContext = createContext<NutritionContextType | undefined>(
   undefined,
 );
 
-export function NutritionProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export function NutritionProvider({ children }: { children: React.ReactNode }) {
   const { session, mode, profile } = useAuth();
   const userId = session?.user?.id ?? null;
 
-  const [selectedDate, setSelectedDate] = useState<string>(getTodayDateString());
+  const [selectedDate, setSelectedDate] =
+    useState<string>(getTodayDateString());
   const [meals, setMeals] = useState<MealEntry[]>([]);
   const [goals, setGoals] = useState<DailyGoals>(DEFAULT_GOALS);
   const [savedFoods, setSavedFoods] = useState<SavedFood[]>([]);
@@ -202,7 +198,9 @@ export function NutritionProvider({
 
   // Meal Actions
   const addMealEntry = useCallback(
-    async (mealData: Omit<MealEntry, "id" | "createdAt">): Promise<MealEntry> => {
+    async (
+      mealData: Omit<MealEntry, "id" | "createdAt">,
+    ): Promise<MealEntry> => {
       const targetDate = mealData.date || selectedDate;
       let newMeal: MealEntry;
 
@@ -275,16 +273,16 @@ export function NutritionProvider({
       const saved = await updateGoalsStorage(newGoals);
       setGoals(saved);
 
-      if (mode === "authenticated" && userId) {
-        try {
-          await upsertUserProfile({
-            id: userId,
-            target_calorie: saved.calories,
-          });
-        } catch (err) {
-          console.warn("Failed to sync target_calorie to Supabase profile:", err);
-        }
-      }
+      // if (mode === "authenticated" && userId) {
+      //   try {
+      //     await upsertUserProfile({
+      //       id: userId,
+      //       target_calorie: saved.calories,
+      //     });
+      //   } catch (err) {
+      //     console.warn("Failed to sync target_calorie to Supabase profile:", err);
+      //   }
+      // }
     },
     [mode, userId],
   );
@@ -301,13 +299,10 @@ export function NutritionProvider({
     [],
   );
 
-  const deleteCustomFood = useCallback(
-    async (id: string): Promise<void> => {
-      await deleteSavedFoodItem(id);
-      setSavedFoods((prev) => prev.filter((f) => f.id !== id));
-    },
-    [],
-  );
+  const deleteCustomFood = useCallback(async (id: string): Promise<void> => {
+    await deleteSavedFoodItem(id);
+    setSavedFoods((prev) => prev.filter((f) => f.id !== id));
+  }, []);
 
   const logFoodFromSaved = useCallback(
     async (

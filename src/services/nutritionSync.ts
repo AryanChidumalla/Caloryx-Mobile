@@ -1,10 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import { MealEntry, MealType, UserProfile } from "@/types/nutrition";
 import { formatLocalDate, getTodayDateString } from "@/utils/date";
-import {
-  generateUUID,
-  sanitizeNumber,
-} from "@/utils/nutritionCalculations";
+import { generateUUID, sanitizeNumber } from "@/utils/nutritionCalculations";
 
 export type SupabaseFoodLogRow = {
   id: string;
@@ -57,9 +54,7 @@ export function mapFoodLogRowToMealEntry(row: SupabaseFoodLogRow): MealEntry {
 /**
  * Fetches all food logs for an authenticated user from Supabase.
  */
-export async function fetchUserFoodLogs(
-  userId: string,
-): Promise<MealEntry[]> {
+export async function fetchUserFoodLogs(userId: string): Promise<MealEntry[]> {
   try {
     const { data, error } = await supabase
       .from("food_logs")
@@ -76,7 +71,9 @@ export async function fetchUserFoodLogs(
       return [];
     }
 
-    return data.map((row) => mapFoodLogRowToMealEntry(row as SupabaseFoodLogRow));
+    return data.map((row) =>
+      mapFoodLogRowToMealEntry(row as SupabaseFoodLogRow),
+    );
   } catch (err) {
     console.error("fetchUserFoodLogs error:", err);
     throw err;
@@ -229,16 +226,31 @@ export async function fetchUserProfile(
 export async function upsertUserProfile(
   profile: Partial<UserProfile> & { id: string },
 ): Promise<UserProfile> {
+  console.log("========== UPSERT PROFILE ==========");
+  console.log("profile:", JSON.stringify(profile));
+  console.log("profile.sex:", profile.sex);
+  console.log("profile.age:", profile.age);
+  console.log("profile.height:", profile.height);
+  console.log("profile.weight:", profile.weight);
+  console.log("profile.activity_level:", profile.activity_level);
+  console.log("profile.target_calorie:", profile.target_calorie);
+  console.log("====================================");
+
   const payload = {
     id: profile.id,
     username: profile.username ?? null,
     sex: profile.sex ?? null,
-    age: profile.age ? Math.round(profile.age) : null,
-    height: profile.height ? Number(profile.height) : null,
-    weight: profile.weight ? Number(profile.weight) : null,
+    age: profile.age != null ? Math.round(Number(profile.age)) : null,
+    height: profile.height != null ? Number(profile.height) : null,
+    weight: profile.weight != null ? Number(profile.weight) : null,
     activity_level: profile.activity_level ?? null,
-    target_calorie: profile.target_calorie ? Math.round(profile.target_calorie) : null,
+    target_calorie:
+      profile.target_calorie != null
+        ? Math.round(Number(profile.target_calorie))
+        : null,
   };
+
+  console.log("PAYLOAD:", JSON.stringify(payload));
 
   const { data, error } = await supabase
     .from("profiles")

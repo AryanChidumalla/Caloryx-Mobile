@@ -1,112 +1,125 @@
 import CalorieOverview from "@/components/CalorieOverview";
-import CopyButton from "@/components/CopyButton";
+import DashboardWorkoutCard from "@/components/DashboardWorkoutCard";
 import DateNavigator from "@/components/DateNavigator";
+import EditWorkoutModal from "@/components/EditWorkoutModal";
 import GoalSettingsModal from "@/components/GoalSettingsModal";
 import HomeHeader from "@/components/HomeHeader";
 import MacroProgressBars from "@/components/MacroProgressBars";
-import MealSection from "@/components/MealSection";
+import StepsTrackerCard from "@/components/StepsTrackerCard";
+import WaterTrackerCard from "@/components/WaterTrackerCard";
+import { useAuth } from "@/context/AuthContext";
 import { useNutrition } from "@/context/NutritionContext";
-import { globalStyles } from "@/styles/global";
-import { MealEntry, MealType } from "@/types/nutrition";
+import { useWorkout } from "@/context/WorkoutContext";
+import { colors, globalStyles } from "@/styles/global";
+import { WorkoutSession } from "@/types/workout";
+import { isToday } from "@/utils/date";
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React, { useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { useState } from "react";
+import {
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-export default function HomeScreen() {
+export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
-  const {
-    mealBreakdown,
-    deleteMealEntry,
-    setEditingMeal,
-    setPreselectedMealType,
-  } = useNutrition();
+  const { profile, user, mode } = useAuth();
+  const { selectedDate, goToToday, refreshAll, isLoading } = useNutrition();
+  const { updateSession, refreshWorkouts } = useWorkout();
 
   const [goalsModalVisible, setGoalsModalVisible] = useState(false);
+  const [editingWorkoutSession, setEditingWorkoutSession] =
+    useState<WorkoutSession | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const handleAddMealForType = (type: MealType) => {
-    setEditingMeal(null);
-    setPreselectedMealType(type);
-    router.navigate("/(tabs)/add-meal");
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([refreshAll(), refreshWorkouts()]);
+    setRefreshing(false);
   };
 
-  const handleEditMeal = (meal: MealEntry) => {
-    setEditingMeal(meal);
-    setPreselectedMealType(meal.mealType);
-    router.navigate("/(tabs)/add-meal");
-  };
+  const displayName =
+    profile?.username ||
+    user?.email?.split("@")[0] ||
+    (mode === "guest" ? "Guest" : "there");
+
+  const isCurrentDateToday = isToday(selectedDate);
 
   return (
     <View style={[globalStyles.container, { paddingTop: insets.top }]}>
       <ScrollView
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: insets.bottom + 20 },
+          { paddingBottom: insets.bottom + 24 },
         ]}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing || isLoading}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+          />
+        }
       >
+        {/* Header with App Branding and Profile Avatar */}
         <HomeHeader
           onOpenGoals={() => setGoalsModalVisible(true)}
-          onOpenAccount={() => router.push("/auth/account")}
+          onOpenAccount={() => router.navigate("/(tabs)/profile")}
         />
 
+        {/* Date Navigator */}
         <DateNavigator />
 
+        {/* User Greeting & Date Bar */}
+        <View style={styles.greetingBar}>
+          <Text style={styles.greetingText}>Hello, {displayName}</Text>
+
+          {!isCurrentDateToday && (
+            <TouchableOpacity style={styles.jumpTodayBtn} onPress={goToToday}>
+              <Ionicons name="today-outline" size={13} color={colors.primary} />
+              <Text style={styles.jumpTodayText}>Today</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* 1. Nutrition & Calories Summary */}
         <CalorieOverview onOpenGoals={() => setGoalsModalVisible(true)} />
 
+        {/* 2. Macro Nutrients Breakdown */}
         <MacroProgressBars />
 
-        {/* Meal Categories */}
-        <MealSection
-          mealType="breakfast"
-          title="Breakfast"
-          iconName="sunny-outline"
-          meals={mealBreakdown.breakfast.meals}
-          totals={mealBreakdown.breakfast.totals}
-          onAddMeal={handleAddMealForType}
-          onEditMeal={handleEditMeal}
-          onDeleteMeal={deleteMealEntry}
+        {/* 3. Workout Section Widget (Date Synchronized) */}
+        <DashboardWorkoutCard
+          date={selectedDate}
+          onEditWorkout={(session) => setEditingWorkoutSession(session)}
         />
 
-        <MealSection
-          mealType="lunch"
-          title="Lunch"
-          iconName="restaurant-outline"
-          meals={mealBreakdown.lunch.meals}
-          totals={mealBreakdown.lunch.totals}
-          onAddMeal={handleAddMealForType}
-          onEditMeal={handleEditMeal}
-          onDeleteMeal={deleteMealEntry}
-        />
+        {/* 4. Water Tracker Card (Date Synchronized) */}
+        <WaterTrackerCard date={selectedDate} />
 
-        <MealSection
-          mealType="dinner"
-          title="Dinner"
-          iconName="moon-outline"
-          meals={mealBreakdown.dinner.meals}
-          totals={mealBreakdown.dinner.totals}
-          onAddMeal={handleAddMealForType}
-          onEditMeal={handleEditMeal}
-          onDeleteMeal={deleteMealEntry}
-        />
-
-        <MealSection
-          mealType="snack"
-          title="Snacks"
-          iconName="nutrition-outline"
-          meals={mealBreakdown.snack.meals}
-          totals={mealBreakdown.snack.totals}
-          onAddMeal={handleAddMealForType}
-          onEditMeal={handleEditMeal}
-          onDeleteMeal={deleteMealEntry}
-        />
-
-        <CopyButton />
+        {/* 5. Steps Tracker Card (Date Synchronized) */}
+        <StepsTrackerCard date={selectedDate} />
       </ScrollView>
 
+      {/* Goal Settings Modal */}
       <GoalSettingsModal
         visible={goalsModalVisible}
         onClose={() => setGoalsModalVisible(false)}
+      />
+
+      {/* Edit Completed Workout Modal */}
+      <EditWorkoutModal
+        visible={!!editingWorkoutSession}
+        session={editingWorkoutSession}
+        onClose={() => setEditingWorkoutSession(null)}
+        onSave={async (updated) => {
+          await updateSession(updated);
+        }}
       />
     </View>
   );
@@ -115,6 +128,33 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 10,
+    paddingTop: 8,
+  },
+  greetingBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+    paddingHorizontal: 2,
+  },
+  greetingText: {
+    fontSize: 20,
+    fontWeight: "900",
+    color: colors.text,
+    letterSpacing: -0.3,
+  },
+  jumpTodayBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: colors.primaryMuted,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+  },
+  jumpTodayText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.primary,
   },
 });

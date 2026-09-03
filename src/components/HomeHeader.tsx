@@ -1,7 +1,6 @@
 import { colors } from "@/styles/global";
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import ShareButton from "./ShareButton";
 
 type HomeHeaderProps = {
   onOpenGoals?: () => void;
@@ -16,7 +15,7 @@ export default function HomeHeader({
     <View style={styles.header}>
       <View>
         <Text style={styles.appName}>Caloryx</Text>
-        <Text style={styles.tagline}>Nutrition & Macro Tracker</Text>
+        <Text style={styles.tagline}>Health & Fitness Tracker</Text>
       </View>
 
       <View style={styles.actions}>
@@ -39,8 +38,6 @@ export default function HomeHeader({
             <Ionicons name="settings-outline" size={20} color={colors.text} />
           </TouchableOpacity>
         )}
-
-        <ShareButton />
       </View>
     </View>
   );

@@ -1,7 +1,6 @@
 import { colors } from "@/styles/global";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
-import React from "react";
 import { Platform } from "react-native";
 
 export default function TabLayout() {
@@ -20,36 +19,83 @@ export default function TabLayout() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: "700",
         },
       }}
     >
+      {/* 1. Dashboard Tab */}
       <Tabs.Screen
         name="index"
         options={{
-          title: "Today",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="pie-chart" size={size} color={color} />
+          title: "Dashboard",
+          tabBarIcon: ({ color, focused, size }) => (
+            <Ionicons
+              name={focused ? "grid" : "grid-outline"}
+              size={size - 1}
+              color={color}
+            />
           ),
         }}
       />
+
+      {/* 2. Nutrition Tab */}
+      <Tabs.Screen
+        name="nutrition"
+        options={{
+          title: "Nutrition",
+          tabBarIcon: ({ color, focused, size }) => (
+            <Ionicons
+              name={focused ? "restaurant" : "restaurant-outline"}
+              size={size - 1}
+              color={color}
+            />
+          ),
+        }}
+      />
+
+      {/* 3. Workout Tab */}
+      <Tabs.Screen
+        name="workout"
+        options={{
+          title: "Workout",
+          tabBarIcon: ({ color, focused, size }) => (
+            <Ionicons
+              name={focused ? "barbell" : "barbell-outline"}
+              size={size}
+              color={color}
+            />
+          ),
+        }}
+      />
+
+      {/* 4. Profile Tab */}
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: "Profile",
+          tabBarIcon: ({ color, focused, size }) => (
+            <Ionicons
+              name={focused ? "person" : "person-outline"}
+              size={size - 1}
+              color={color}
+            />
+          ),
+        }}
+      />
+
+      {/* Auxiliary screens hidden from tab bar */}
       <Tabs.Screen
         name="add-meal"
         options={{
-          title: "Log Food",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="add-circle" size={size + 2} color={color} />
-          ),
+          href: null,
         }}
       />
+
       <Tabs.Screen
         name="meals"
         options={{
-          title: "History",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="calendar-outline" size={size} color={color} />
-          ),
+          href: null,
         }}
       />
     </Tabs>

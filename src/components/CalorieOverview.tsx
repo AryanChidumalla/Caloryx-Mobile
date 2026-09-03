@@ -1,7 +1,7 @@
 import { useNutrition } from "@/context/NutritionContext";
 import { colors } from "@/styles/global";
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
+import { router } from "expo-router";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 type CalorieOverviewProps = {
@@ -12,7 +12,10 @@ export default function CalorieOverview({ onOpenGoals }: CalorieOverviewProps) {
   const { dailyTotals, goals, remainingMacros, percentages } = useNutrition();
 
   const isExceeded = remainingMacros.isCalorieExceeded;
-  const progressRatio = Math.min(1, goals.calories > 0 ? dailyTotals.calories / goals.calories : 0);
+  const progressRatio = Math.min(
+    1,
+    goals.calories > 0 ? dailyTotals.calories / goals.calories : 0,
+  );
   const progressPercent = Math.round(progressRatio * 100);
 
   return (
@@ -26,19 +29,40 @@ export default function CalorieOverview({ onOpenGoals }: CalorieOverviewProps) {
         </View>
 
         <TouchableOpacity
+          style={styles.startButton}
+          onPress={() => router.navigate("/(tabs)/nutrition")}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="restaurant" size={13} color="#0A0A0A" />
+
+          <Text style={styles.startButtonText}>Log</Text>
+        </TouchableOpacity>
+
+        {/* <View style={styles.quickLogLeft}>
+          <Ionicons
+            name="restaurant-outline"
+            size={16}
+            color={colors.primary}
+          />
+          <Text style={styles.quickLogText}>View Daily Meals & Log Food</Text>
+        </View> */}
+
+        {/* <TouchableOpacity
           style={styles.goalButton}
           onPress={onOpenGoals}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Ionicons name="options-outline" size={16} color={colors.primary} />
           <Text style={styles.goalButtonText}>Goals</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
 
       <View style={styles.mainStatsRow}>
         <View>
           <Text style={[styles.mainValue, isExceeded && styles.exceededValue]}>
-            {isExceeded ? `+${remainingMacros.calories}` : remainingMacros.calories}
+            {isExceeded
+              ? `+${remainingMacros.calories}`
+              : remainingMacros.calories}
           </Text>
           <Text style={[styles.mainLabel, isExceeded && styles.exceededLabel]}>
             {isExceeded ? "kcal over goal" : "kcal remaining"}
@@ -220,5 +244,29 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "600",
     color: colors.alert,
+  },
+  quickLogLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  quickLogText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: colors.text,
+  },
+  startButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: colors.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+  },
+  startButtonText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: colors.background,
   },
 });
