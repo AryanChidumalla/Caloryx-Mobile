@@ -1,9 +1,9 @@
 import CalorieOverview from "@/components/CalorieOverview";
+import HomeHeader from "@/components/dashboard/HomeHeader";
 import DashboardWorkoutCard from "@/components/DashboardWorkoutCard";
 import DateNavigator from "@/components/DateNavigator";
 import EditWorkoutModal from "@/components/EditWorkoutModal";
 import GoalSettingsModal from "@/components/GoalSettingsModal";
-import HomeHeader from "@/components/HomeHeader";
 import MacroProgressBars from "@/components/MacroProgressBars";
 import StepsTrackerCard from "@/components/StepsTrackerCard";
 import WaterTrackerCard from "@/components/WaterTrackerCard";
@@ -14,7 +14,6 @@ import { colors, globalStyles } from "@/styles/global";
 import { WorkoutSession } from "@/types/workout";
 import { isToday } from "@/utils/date";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
 import { useState } from "react";
 import {
   RefreshControl,
@@ -69,10 +68,7 @@ export default function DashboardScreen() {
         }
       >
         {/* Header with App Branding and Profile Avatar */}
-        <HomeHeader
-          onOpenGoals={() => setGoalsModalVisible(true)}
-          onOpenAccount={() => router.navigate("/(tabs)/profile")}
-        />
+        <HomeHeader />
 
         {/* Date Navigator */}
         <DateNavigator />
