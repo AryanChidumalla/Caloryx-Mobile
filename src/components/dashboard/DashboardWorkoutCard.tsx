@@ -1,10 +1,9 @@
 import { useWorkout } from "@/context/WorkoutContext";
 import { colors } from "@/styles/global";
 import { WorkoutSession } from "@/types/workout";
-import { formatDateForDisplay, isToday } from "@/utils/date";
+import { isToday } from "@/utils/date";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 type DashboardWorkoutCardProps = {
@@ -24,195 +23,202 @@ export default function DashboardWorkoutCard({
   } = useWorkout();
 
   const isTodayDate = !date || isToday(date);
+
   const workoutForDate = date ? getWorkoutForDate(date) : todayWorkout;
 
   const formatTimer = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
+
     return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
   };
 
-  // State 1: Active Workout in Progress (only on today)
+  /*
+   * =========================================================
+   * ACTIVE WORKOUT
+   * =========================================================
+   */
+
   if (isTodayDate && activeWorkout) {
     return (
-      <View style={[styles.card, styles.activeBorder]}>
-        <View style={styles.topRow}>
+      <View style={[styles.card, styles.activeCard]}>
+        <View style={styles.headerRow}>
           <View style={styles.titleContainer}>
-            <View style={[styles.iconCircle, styles.activeIconCircle]}>
-              <Ionicons name="flash" size={18} color="#FFFFFF" />
+            <View style={styles.activeIcon}>
+              <Ionicons name="flash" size={17} color="#FFFFFF" />
             </View>
-            <View>
-              <Text style={styles.activeTitle}>Workout In Progress</Text>
-              <Text style={styles.activeSub}>{activeWorkout.name}</Text>
+
+            <View style={styles.titleWrap}>
+              <Text style={styles.activeTitle}>Workout in Progress</Text>
+
+              <Text style={styles.activeSubtitle} numberOfLines={1}>
+                {activeWorkout.name}
+              </Text>
             </View>
           </View>
 
           <View style={styles.timerBadge}>
-            <Ionicons name="time-outline" size={13} color="#FFFFFF" />
+            <View style={styles.liveDot} />
+
             <Text style={styles.timerText}>
               {formatTimer(activeDurationSeconds)}
             </Text>
           </View>
         </View>
 
-        <View style={styles.activeExercisesRow}>
-          <Text style={styles.activeExercisesText}>
-            {activeWorkout.exercises.length}{" "}
-            {activeWorkout.exercises.length === 1 ? "exercise" : "exercises"} added
-          </Text>
+        <View style={styles.activeFooter}>
+          <View>
+            <Text style={styles.footerLabel}>Exercises</Text>
+
+            <Text style={styles.footerValue}>
+              {activeWorkout.exercises.length}
+            </Text>
+          </View>
+
           <TouchableOpacity
             style={styles.resumeButton}
             onPress={() => router.navigate("/(tabs)/workout")}
-            activeOpacity={0.7}
+            activeOpacity={0.75}
           >
-            <Text style={styles.resumeButtonText}>Resume Workout</Text>
-            <Ionicons name="arrow-forward" size={14} color="#0A0A0A" />
+            <Text style={styles.resumeText}>Resume</Text>
+
+            <Ionicons name="arrow-forward" size={15} color="#0A0A0A" />
           </TouchableOpacity>
         </View>
       </View>
     );
   }
 
-  // State 2: Completed Workout for Date
+  /*
+   * =========================================================
+   * COMPLETED WORKOUT
+   * =========================================================
+   */
+
   if (workoutForDate) {
     const mins = Math.round((workoutForDate.durationSeconds || 0) / 60);
+
     const setsCount = workoutForDate.exercises.reduce(
-      (total, ex) => total + (ex.sets?.length || 0),
+      (total, exercise) => total + (exercise.sets?.length || 0),
       0,
     );
 
     return (
       <View style={styles.card}>
-        <View style={styles.topRow}>
+        <View style={styles.headerRow}>
           <View style={styles.titleContainer}>
-            <View style={[styles.iconCircle, styles.completedIconCircle]}>
-              <Ionicons name="checkmark-circle" size={18} color={colors.protein} />
+            <View style={styles.completedIcon}>
+              <Ionicons name="checkmark" size={17} color={colors.protein} />
             </View>
+
             <View style={styles.titleWrap}>
               <Text style={styles.cardTitle} numberOfLines={1}>
                 {workoutForDate.name}
               </Text>
-              <Text style={styles.cardSub}>
-                {isTodayDate
-                  ? "Completed today"
-                  : `Completed on ${formatDateForDisplay(date)}`}
-              </Text>
+
+              <Text style={styles.cardSubtitle}>Completed</Text>
             </View>
           </View>
 
-          <View style={styles.actionButtonsRow}>
-            {onEditWorkout && (
-              <TouchableOpacity
-                style={styles.editButton}
-                onPress={() => onEditWorkout(workoutForDate)}
-                activeOpacity={0.7}
-              >
-                <Ionicons
-                  name="create-outline"
-                  size={14}
-                  color={colors.textSecondary}
-                />
-                <Text style={styles.editButtonText}>Edit</Text>
-              </TouchableOpacity>
-            )}
+          <TouchableOpacity
+            style={styles.viewButton}
+            onPress={() => router.navigate("/(tabs)/workout")}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.viewButtonText}>View</Text>
 
-            <TouchableOpacity
-              style={styles.viewHistoryButton}
-              onPress={() => router.navigate("/(tabs)/workout")}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.viewHistoryText}>View</Text>
-              <Ionicons
-                name="chevron-forward"
-                size={12}
-                color={colors.textSecondary}
-              />
-            </TouchableOpacity>
-          </View>
+            <Ionicons
+              name="chevron-forward"
+              size={13}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
         </View>
 
         <View style={styles.statsRow}>
-          <View style={styles.statBox}>
-            <Text style={styles.statLabel}>Duration</Text>
-            <Text style={styles.statVal}>
+          <View style={styles.stat}>
+            <Text style={styles.statValue}>
               {mins > 0 ? `${mins} min` : "<1 min"}
             </Text>
+
+            <Text style={styles.statLabel}>Duration</Text>
           </View>
+
           <View style={styles.statDivider} />
-          <View style={styles.statBox}>
+
+          <View style={styles.stat}>
+            <Text style={styles.statValue}>
+              {workoutForDate.exercises.length}
+            </Text>
+
             <Text style={styles.statLabel}>Exercises</Text>
-            <Text style={styles.statVal}>{workoutForDate.exercises.length}</Text>
           </View>
+
           <View style={styles.statDivider} />
-          <View style={styles.statBox}>
-            <Text style={styles.statLabel}>Total Sets</Text>
-            <Text style={styles.statVal}>{setsCount}</Text>
+
+          <View style={styles.stat}>
+            <Text style={styles.statValue}>{setsCount}</Text>
+
+            <Text style={styles.statLabel}>Sets</Text>
           </View>
-          {workoutForDate.totalVolumeKg > 0 && (
-            <>
-              <View style={styles.statDivider} />
-              <View style={styles.statBox}>
-                <Text style={styles.statLabel}>Volume</Text>
-                <Text style={styles.statVal}>
-                  {workoutForDate.totalVolumeKg.toLocaleString()} kg
-                </Text>
-              </View>
-            </>
-          )}
         </View>
       </View>
     );
   }
 
-  // State 3: No Workout on Date
+  /*
+   * =========================================================
+   * NO WORKOUT
+   * =========================================================
+   */
+
   return (
     <View style={styles.card}>
-      <View style={styles.topRow}>
+      <View style={styles.headerRow}>
         <View style={styles.titleContainer}>
           <View style={styles.iconCircle}>
-            <Ionicons name="barbell-outline" size={18} color={colors.primary} />
+            <Ionicons name="barbell-outline" size={17} color={colors.primary} />
           </View>
+
           <View style={styles.titleWrap}>
-            <Text style={styles.cardTitle}>
-              {isTodayDate ? "Today's Workout" : "Workout"}
-            </Text>
-            <Text style={styles.cardSub}>
-              {isTodayDate
-                ? "No workout recorded today"
-                : `No workout recorded on ${formatDateForDisplay(date)}`}
-            </Text>
+            <Text style={styles.cardTitle}>Workout</Text>
+
+            <Text style={styles.cardSubtitle}>No workout recorded</Text>
           </View>
         </View>
 
         <TouchableOpacity
           style={styles.startButton}
           onPress={() => router.navigate("/(tabs)/workout")}
-          activeOpacity={0.7}
+          activeOpacity={0.75}
         >
-          <Ionicons name="play" size={12} color="#0A0A0A" />
+          <Ionicons name="play" size={11} color="#0A0A0A" />
+
           <Text style={styles.startButtonText}>
             {isTodayDate ? "Start" : "Log"}
           </Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.quickStartRow}>
+      <View style={styles.quickActions}>
         <TouchableOpacity
-          style={styles.quickStartChip}
+          style={styles.quickAction}
           onPress={() => router.navigate("/(tabs)/workout")}
           activeOpacity={0.7}
         >
-          <Ionicons name="flash-outline" size={14} color={colors.primary} />
-          <Text style={styles.quickStartText}>Start an Empty Workout</Text>
+          <Ionicons name="flash-outline" size={15} color={colors.primary} />
+
+          <Text style={styles.quickActionText}>Empty workout</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.quickStartChip}
+          style={styles.quickAction}
           onPress={() => router.navigate("/(tabs)/workout")}
           activeOpacity={0.7}
         >
-          <Ionicons name="layers-outline" size={14} color={colors.primary} />
-          <Text style={styles.quickStartText}>Choose from Routines</Text>
+          <Ionicons name="layers-outline" size={15} color={colors.primary} />
+
+          <Text style={styles.quickActionText}>Choose routine</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -220,6 +226,12 @@ export default function DashboardWorkoutCard({
 }
 
 const styles = StyleSheet.create({
+  /*
+   * =========================================================
+   * CARD
+   * =========================================================
+   */
+
   card: {
     backgroundColor: colors.surface,
     borderRadius: 20,
@@ -228,200 +240,259 @@ const styles = StyleSheet.create({
     padding: 18,
     marginBottom: 16,
   },
-  activeBorder: {
+
+  activeCard: {
     borderColor: colors.primary,
     backgroundColor: colors.surface,
   },
-  topRow: {
+
+  /*
+   * =========================================================
+   * HEADER
+   * =========================================================
+   */
+
+  headerRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    justifyContent: "space-between",
   },
+
   titleContainer: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
     flex: 1,
+    minWidth: 0,
   },
+
   titleWrap: {
     flex: 1,
+    minWidth: 0,
   },
+
   iconCircle: {
     width: 34,
     height: 34,
-    borderRadius: 12,
-    backgroundColor: colors.primaryMuted,
-    justifyContent: "center",
+    borderRadius: 11,
     alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.primaryMuted,
   },
-  activeIconCircle: {
-    backgroundColor: colors.primary,
-  },
-  completedIconCircle: {
+
+  completedIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 11,
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: "rgba(52, 211, 153, 0.12)",
   },
+
+  activeIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 11,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.primary,
+  },
+
   cardTitle: {
     fontSize: 15,
-    fontWeight: "700",
+    fontWeight: "800",
     color: colors.text,
   },
-  cardSub: {
+
+  cardSubtitle: {
     fontSize: 12,
     color: colors.textSecondary,
     marginTop: 2,
   },
+
   activeTitle: {
     fontSize: 15,
     fontWeight: "800",
     color: colors.text,
   },
-  activeSub: {
+
+  activeSubtitle: {
     fontSize: 12,
     color: colors.primary,
     fontWeight: "600",
     marginTop: 2,
   },
+
+  /*
+   * =========================================================
+   * ACTIVE WORKOUT
+   * =========================================================
+   */
+
   timerBadge: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    backgroundColor: colors.surfaceLight,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  timerText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  activeExercisesRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 14,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: colors.surfaceBorder,
-  },
-  activeExercisesText: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    fontWeight: "500",
-  },
-  resumeButton: {
-    flexDirection: "row",
-    alignItems: "center",
     gap: 6,
-    backgroundColor: colors.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 10,
-  },
-  resumeButtonText: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: "#0A0A0A",
-  },
-  actionButtonsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  editButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
     backgroundColor: colors.surfaceLight,
     paddingHorizontal: 9,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: 9,
   },
-  editButtonText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: colors.textSecondary,
+
+  liveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.primary,
   },
-  viewHistoryButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 2,
-    backgroundColor: colors.surfaceLight,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
+
+  timerText: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: colors.text,
+    fontVariant: ["tabular-nums"],
   },
-  viewHistoryText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: colors.textSecondary,
-  },
-  statsRow: {
+
+  activeFooter: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: colors.surfaceLight,
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    marginTop: 14,
+    marginTop: 16,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: colors.surfaceBorder,
   },
-  statBox: {
-    alignItems: "center",
-    flex: 1,
-  },
-  statLabel: {
+
+  footerLabel: {
     fontSize: 10,
     fontWeight: "700",
     color: colors.textSecondary,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
-  statVal: {
-    fontSize: 14,
+
+  footerValue: {
+    fontSize: 15,
     fontWeight: "800",
     color: colors.text,
     marginTop: 2,
   },
+
+  resumeButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: colors.primary,
+    paddingHorizontal: 13,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+
+  resumeText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#0A0A0A",
+  },
+
+  /*
+   * =========================================================
+   * COMPLETED WORKOUT
+   * =========================================================
+   */
+
+  viewButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: colors.surfaceLight,
+  },
+
+  viewButtonText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.textSecondary,
+  },
+
+  statsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 16,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: colors.surfaceBorder,
+  },
+
+  stat: {
+    flex: 1,
+    alignItems: "center",
+  },
+
+  statValue: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: colors.text,
+  },
+
+  statLabel: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: colors.textSecondary,
+    marginTop: 3,
+  },
+
   statDivider: {
     width: 1,
-    height: 20,
+    height: 24,
     backgroundColor: colors.surfaceBorder,
   },
+
+  /*
+   * =========================================================
+   * NO WORKOUT
+   * =========================================================
+   */
+
   startButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: 5,
     backgroundColor: colors.primary,
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 10,
+    paddingVertical: 7,
+    borderRadius: 9,
   },
+
   startButtonText: {
     fontSize: 12,
     fontWeight: "800",
     color: "#0A0A0A",
   },
-  quickStartRow: {
+
+  quickActions: {
     flexDirection: "row",
     gap: 8,
     marginTop: 14,
   },
-  quickStartChip: {
+
+  quickAction: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
     backgroundColor: colors.surfaceLight,
+    borderRadius: 11,
+    paddingVertical: 9,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    paddingVertical: 10,
-    borderRadius: 12,
   },
-  quickStartText: {
-    fontSize: 12,
-    fontWeight: "600",
+
+  quickActionText: {
+    fontSize: 11,
+    fontWeight: "700",
     color: colors.textSecondary,
   },
 });

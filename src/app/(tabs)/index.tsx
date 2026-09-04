@@ -1,10 +1,8 @@
-import CalorieOverview from "@/components/dashboard/CalorieOverview";
+import DashboardGreeting from "@/components/dashboard/DashboardGreeting";
 import DashboardWorkoutCard from "@/components/dashboard/DashboardWorkoutCard";
 import DateNavigator from "@/components/dashboard/DateNavigator";
 import EditWorkoutModal from "@/components/dashboard/EditWorkoutModal";
-import GoalSettingsModal from "@/components/dashboard/GoalSettingsModal";
-import HomeHeader from "@/components/dashboard/HomeHeader";
-import MacroProgressBars from "@/components/dashboard/MacroProgressBars";
+import NutritionOverview from "@/components/dashboard/NutritionOverview";
 import StepsTrackerCard from "@/components/dashboard/StepsTrackerCard";
 import WaterTrackerCard from "@/components/dashboard/WaterTrackerCard";
 import { useAuth } from "@/context/AuthContext";
@@ -13,16 +11,8 @@ import { useWorkout } from "@/context/WorkoutContext";
 import { colors, globalStyles } from "@/styles/global";
 import { WorkoutSession } from "@/types/workout";
 import { isToday } from "@/utils/date";
-import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import {
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function DashboardScreen() {
@@ -67,48 +57,37 @@ export default function DashboardScreen() {
           />
         }
       >
-        {/* Header with App Branding and Profile Avatar */}
-        <HomeHeader />
+        {/* <HomeHeader /> */}
 
-        {/* Date Navigator */}
+        <DashboardGreeting
+          displayName={displayName}
+          selectedDate={selectedDate}
+          goToToday={goToToday}
+        />
+
         <DateNavigator />
 
-        {/* User Greeting & Date Bar */}
-        <View style={styles.greetingBar}>
-          <Text style={styles.greetingText}>Hello, {displayName}</Text>
+        {/* Primary dashboard metric */}
+        <StepsTrackerCard date={selectedDate} />
 
-          {!isCurrentDateToday && (
-            <TouchableOpacity style={styles.jumpTodayBtn} onPress={goToToday}>
-              <Ionicons name="today-outline" size={13} color={colors.primary} />
-              <Text style={styles.jumpTodayText}>Today</Text>
-            </TouchableOpacity>
-          )}
-        </View>
+        {/* Secondary health metric */}
+        <NutritionOverview />
 
-        {/* 1. Nutrition & Calories Summary */}
-        <CalorieOverview onOpenGoals={() => setGoalsModalVisible(true)} />
-
-        {/* 2. Macro Nutrients Breakdown */}
-        <MacroProgressBars />
-
-        {/* 3. Workout Section Widget (Date Synchronized) */}
+        {/* Activity details */}
         <DashboardWorkoutCard
           date={selectedDate}
           onEditWorkout={(session) => setEditingWorkoutSession(session)}
         />
 
-        {/* 4. Water Tracker Card (Date Synchronized) */}
+        {/* Hydration */}
         <WaterTrackerCard date={selectedDate} />
-
-        {/* 5. Steps Tracker Card (Date Synchronized) */}
-        <StepsTrackerCard date={selectedDate} />
       </ScrollView>
 
       {/* Goal Settings Modal */}
-      <GoalSettingsModal
+      {/* <GoalSettingsModal
         visible={goalsModalVisible}
         onClose={() => setGoalsModalVisible(false)}
-      />
+      /> */}
 
       {/* Edit Completed Workout Modal */}
       <EditWorkoutModal
