@@ -1,4 +1,4 @@
-import GoalSettingsModal from "@/components/GoalSettingsModal";
+import GoalSettingsModal from "@/components/dashboard/GoalSettingsModal";
 import MealSection from "@/components/MealSection";
 import { useAuth } from "@/context/AuthContext";
 import { useNutrition } from "@/context/NutritionContext";

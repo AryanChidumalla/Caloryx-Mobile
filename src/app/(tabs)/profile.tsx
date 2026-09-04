@@ -1,4 +1,4 @@
-import EditWorkoutModal from "@/components/EditWorkoutModal";
+import EditWorkoutModal from "@/components/dashboard/EditWorkoutModal";
 import {
   ProfileHeader,
   ProfileHistory,

@@ -1,8 +1,8 @@
 import ActiveWorkoutModal from "@/components/ActiveWorkoutModal";
 import CreateRoutineModal from "@/components/CreateRoutineModal";
-import EditWorkoutModal from "@/components/EditWorkoutModal";
-import RoutineCard from "@/components/RoutineCard";
+import EditWorkoutModal from "@/components/dashboard/EditWorkoutModal";
 import WorkoutHistoryCard from "@/components/profile/history/WorkoutHistoryCard";
+import RoutineCard from "@/components/RoutineCard";
 import { useWorkout } from "@/context/WorkoutContext";
 import { colors, globalStyles } from "@/styles/global";
 import { WorkoutRoutine, WorkoutSession } from "@/types/workout";
