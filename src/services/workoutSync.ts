@@ -7,6 +7,10 @@ import { WorkoutRoutine, WorkoutSession } from "@/types/workout";
 export async function fetchUserRoutines(
   userId: string,
 ): Promise<WorkoutRoutine[]> {
+  if (!userId || typeof userId !== "string" || userId.trim().length === 0) {
+    return [];
+  }
+
   try {
     const { data: routinesData, error: routinesError } = await supabase
       .from("workout_routines")
@@ -33,17 +37,33 @@ export async function fetchUserRoutines(
       isCustom: true,
       exercises: Array.isArray(r.routine_exercises)
         ? r.routine_exercises
-            .sort((a: any, b: any) => (a.order_index ?? 0) - (b.order_index ?? 0))
-            .map((re: any) => ({
+            .sort((a: any, b: any) => {
+              if (a.order_index !== undefined && b.order_index !== undefined) {
+                return a.order_index - b.order_index;
+              }
+              if (a.created_at && b.created_at) {
+                return (
+                  new Date(a.created_at).getTime() -
+                  new Date(b.created_at).getTime()
+                );
+              }
+              return 0;
+            })
+            .map((re: any, idx: number) => ({
               id: re.id,
               routineId: re.routine_id,
               exerciseId: re.exercise_id || undefined,
               exerciseName: re.exercise_name,
               category: re.category || undefined,
-              orderIndex: re.order_index,
-              targetSets: re.target_sets ?? 3,
-              targetReps: re.target_reps ?? "10",
-              targetWeightKg: re.target_weight_kg ? Number(re.target_weight_kg) : 0,
+              orderIndex: re.order_index ?? idx,
+              targetSets: re.target_sets ?? re.sets ?? 3,
+              targetReps: re.target_reps ?? (re.reps ? String(re.reps) : "10"),
+              targetWeightKg:
+                re.target_weight_kg !== undefined
+                  ? Number(re.target_weight_kg)
+                  : re.weight !== undefined
+                    ? Number(re.weight)
+                    : 0,
               targetDurationSeconds: re.target_duration_seconds ?? undefined,
               notes: re.notes || undefined,
             }))
@@ -56,17 +76,22 @@ export async function fetchUserRoutines(
 }
 
 /**
+ * Checks whether a given string is a valid RFC4122 UUID.
+ */
+export function isUUID(str?: string | null): boolean {
+  if (!str || typeof str !== "string") return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    str,
+  );
+}
+
+/**
  * Saves or updates a workout routine and its exercises in Supabase.
  */
 export async function syncUserRoutine(
   userId: string,
   routine: WorkoutRoutine,
 ): Promise<WorkoutRoutine> {
-  const isUUID =
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-      routine.id,
-    );
-
   const routinePayload: any = {
     user_id: userId,
     name: routine.name.trim(),
@@ -74,7 +99,7 @@ export async function syncUserRoutine(
     updated_at: new Date().toISOString(),
   };
 
-  if (isUUID) {
+  if (isUUID(routine.id)) {
     routinePayload.id = routine.id;
   }
 
@@ -97,23 +122,12 @@ export async function syncUserRoutine(
     .eq("routine_id", actualRoutineId);
 
   if (routine.exercises && routine.exercises.length > 0) {
-    const exercisesPayload = routine.exercises.map((re, idx) => ({
+    const exercisesPayload = routine.exercises.map((re) => ({
       routine_id: actualRoutineId,
-      exercise_id:
-        re.exerciseId &&
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-          re.exerciseId,
-        )
-          ? re.exerciseId
-          : null,
       exercise_name: re.exerciseName,
-      category: re.category || null,
-      order_index: idx,
-      target_sets: re.targetSets || 3,
-      target_reps: String(re.targetReps || "10"),
-      target_weight_kg: Number(re.targetWeightKg || 0),
-      target_duration_seconds: re.targetDurationSeconds ?? null,
-      notes: re.notes || null,
+      sets: Number(re.targetSets || 3),
+      reps: parseInt(String(re.targetReps || "10"), 10) || 0,
+      weight: Number(re.targetWeightKg || 0),
     }));
 
     await supabase.from("routine_exercises").insert(exercisesPayload);
@@ -133,6 +147,10 @@ export async function deleteUserRoutine(
   userId: string,
   routineId: string,
 ): Promise<void> {
+  if (!isUUID(routineId)) {
+    return;
+  }
+
   const { error } = await supabase
     .from("workout_routines")
     .delete()
@@ -151,20 +169,9 @@ export async function saveUserWorkoutSession(
   userId: string,
   session: WorkoutSession,
 ): Promise<WorkoutSession> {
-  const isUUID =
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-      session.id,
-    );
-
   const sessionPayload: any = {
     user_id: userId,
-    routine_id:
-      session.routineId &&
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-        session.routineId,
-      )
-        ? session.routineId
-        : null,
+    routine_id: isUUID(session.routineId) ? session.routineId : null,
     name: session.name,
     started_at: session.startedAt,
     completed_at: session.completedAt || new Date().toISOString(),
@@ -174,7 +181,7 @@ export async function saveUserWorkoutSession(
     created_at: session.createdAt || new Date().toISOString(),
   };
 
-  if (isUUID) {
+  if (isUUID(session.id)) {
     sessionPayload.id = session.id;
   }
 
@@ -197,33 +204,38 @@ export async function saveUserWorkoutSession(
       .from("session_exercises")
       .insert({
         session_id: actualSessionId,
-        exercise_id:
-          se.exerciseId &&
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-            se.exerciseId,
-          )
-            ? se.exerciseId
-            : null,
         exercise_name: se.exerciseName,
-        category: se.category || null,
-        order_index: i,
-        notes: se.notes || null,
+        sets: se.sets?.length || 0,
+        reps: se.sets?.reduce((sum, s) => sum + (Number(s.reps) || 0), 0) || 0,
+        weight:
+          se.sets && se.sets.length > 0
+            ? Math.max(...se.sets.map((s) => Number(s.weightKg) || 0))
+            : 0,
       })
       .select()
       .single();
 
-    if (!seError && savedSe && se.sets && se.sets.length > 0) {
+    if (seError) {
+      console.warn("Error inserting session_exercise into Supabase:", seError);
+      throw seError;
+    }
+
+    if (savedSe && se.sets && se.sets.length > 0) {
       const setsPayload = se.sets.map((set, setIdx) => ({
         session_exercise_id: savedSe.id,
         set_number: set.setNumber || setIdx + 1,
-        set_type: set.setType || "regular",
-        weight_kg: Number(set.weightKg || 0),
+        weight: Number(set.weightKg || 0),
         reps: Number(set.reps || 0),
-        duration_seconds: set.durationSeconds ?? null,
-        completed: Boolean(set.completed),
       }));
 
-      await supabase.from("exercise_sets").insert(setsPayload);
+      const { error: setsError } = await supabase
+        .from("exercise_sets")
+        .insert(setsPayload);
+
+      if (setsError) {
+        console.warn("Error inserting exercise_sets into Supabase:", setsError);
+        throw setsError;
+      }
     }
   }
 
@@ -240,6 +252,10 @@ export async function saveUserWorkoutSession(
 export async function fetchUserWorkoutSessions(
   userId: string,
 ): Promise<WorkoutSession[]> {
+  if (!userId || typeof userId !== "string" || userId.trim().length === 0) {
+    return [];
+  }
+
   try {
     const { data, error } = await supabase
       .from("workout_sessions")
@@ -256,45 +272,73 @@ export async function fetchUserWorkoutSessions(
       return [];
     }
 
-    return data.map((s: any) => ({
-      id: s.id,
-      userId: s.user_id,
-      routineId: s.routine_id || undefined,
-      name: s.name,
-      startedAt: s.started_at,
-      completedAt: s.completed_at || undefined,
-      durationSeconds: s.duration_seconds || 0,
-      totalVolumeKg: Number(s.total_volume_kg || 0),
-      notes: s.notes || undefined,
-      createdAt: s.created_at,
-      exercises: Array.isArray(s.session_exercises)
-        ? s.session_exercises
-            .sort((a: any, b: any) => (a.order_index ?? 0) - (b.order_index ?? 0))
-            .map((se: any) => ({
-              id: se.id,
-              sessionId: se.session_id,
-              exerciseId: se.exercise_id || undefined,
-              exerciseName: se.exercise_name,
-              category: se.category || undefined,
-              orderIndex: se.order_index,
-              notes: se.notes || undefined,
-              sets: Array.isArray(se.exercise_sets)
-                ? se.exercise_sets
-                    .sort((a: any, b: any) => (a.set_number ?? 0) - (b.set_number ?? 0))
-                    .map((st: any) => ({
-                      id: st.id,
-                      sessionExerciseId: st.session_exercise_id,
-                      setNumber: st.set_number,
-                      setType: st.set_type || "regular",
-                      weightKg: Number(st.weight_kg || 0),
-                      reps: Number(st.reps || 0),
-                      durationSeconds: st.duration_seconds ?? undefined,
-                      completed: Boolean(st.completed),
-                    }))
-                : [],
-            }))
-        : [],
-    }));
+    return data.map((s: any) => {
+      const rawExercises = s.session_exercises || s.exercises || [];
+      return {
+        id: s.id,
+        userId: s.user_id,
+        routineId: s.routine_id || undefined,
+        name: s.name,
+        startedAt: s.started_at,
+        completedAt: s.completed_at || undefined,
+        durationSeconds: Number(s.duration_seconds || 0),
+        totalVolumeKg: Number(s.total_volume_kg || 0),
+        notes: s.notes || undefined,
+        createdAt: s.created_at,
+        exercises: Array.isArray(rawExercises)
+          ? rawExercises
+              .sort((a: any, b: any) => {
+                if (a.order_index !== undefined && b.order_index !== undefined) {
+                  return a.order_index - b.order_index;
+                }
+                if (a.created_at && b.created_at) {
+                  return (
+                    new Date(a.created_at).getTime() -
+                    new Date(b.created_at).getTime()
+                  );
+                }
+                return 0;
+              })
+              .map((se: any, idx: number) => {
+                const rawSets = se.exercise_sets || se.sets || [];
+                return {
+                  id: se.id,
+                  sessionId: se.session_id,
+                  exerciseId: se.exercise_id || undefined,
+                  exerciseName: se.exercise_name || se.name || "Exercise",
+                  category: se.category || undefined,
+                  orderIndex: se.order_index ?? idx,
+                  notes: se.notes || undefined,
+                  sets: Array.isArray(rawSets)
+                    ? rawSets
+                        .sort(
+                          (a: any, b: any) =>
+                            (a.set_number ?? 0) - (b.set_number ?? 0),
+                        )
+                        .map((st: any) => ({
+                          id: st.id,
+                          sessionExerciseId: st.session_exercise_id,
+                          setNumber: st.set_number ?? 1,
+                          setType: st.set_type || "regular",
+                          weightKg: Number(
+                            st.weight ?? st.weight_kg ?? st.weightKg ?? 0,
+                          ),
+                          reps: Number(st.reps ?? 0),
+                          durationSeconds:
+                            st.duration_seconds ??
+                            st.durationSeconds ??
+                            undefined,
+                          completed:
+                            st.completed !== undefined
+                              ? Boolean(st.completed)
+                              : true,
+                        }))
+                    : [],
+                };
+              })
+          : [],
+      };
+    });
   } catch (err) {
     console.warn("fetchUserWorkoutSessions error:", err);
     return [];
@@ -308,6 +352,10 @@ export async function deleteUserWorkoutSession(
   userId: string,
   sessionId: string,
 ): Promise<void> {
+  if (!userId || !isUUID(sessionId)) {
+    return;
+  }
+
   const { error } = await supabase
     .from("workout_sessions")
     .delete()
@@ -326,21 +374,17 @@ export async function updateCloudWorkoutSession(
   userId: string,
   session: WorkoutSession,
 ): Promise<void> {
-  const isUUID =
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-      session.id,
-    );
-
-  if (!isUUID) {
+  if (!userId || !isUUID(session.id)) {
     return;
   }
 
   try {
     // 1. Update the parent workout_session record
-    await supabase
+    const { error: sessionError } = await supabase
       .from("workout_sessions")
       .update({
         name: session.name,
+        started_at: session.startedAt,
         completed_at: session.completedAt || new Date().toISOString(),
         duration_seconds: session.durationSeconds || 0,
         total_volume_kg: session.totalVolumeKg || 0,
@@ -348,6 +392,11 @@ export async function updateCloudWorkoutSession(
       })
       .eq("id", session.id)
       .eq("user_id", userId);
+
+    if (sessionError) {
+      console.warn("Failed to update parent workout_session:", sessionError);
+      return;
+    }
 
     // 2. Clear previous session_exercises (cascades to sets)
     await supabase
@@ -362,33 +411,43 @@ export async function updateCloudWorkoutSession(
         .from("session_exercises")
         .insert({
           session_id: session.id,
-          exercise_id:
-            se.exerciseId &&
-            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-              se.exerciseId,
-            )
-              ? se.exerciseId
-              : null,
           exercise_name: se.exerciseName,
-          category: se.category || null,
-          order_index: i,
-          notes: se.notes || null,
+          sets: se.sets?.length || 0,
+          reps: se.sets?.reduce((acc, s) => acc + (Number(s.reps) || 0), 0) || 0,
+          weight:
+            se.sets && se.sets.length > 0
+              ? Math.max(...se.sets.map((s) => Number(s.weightKg) || 0))
+              : 0,
         })
         .select()
         .single();
 
-      if (!seError && savedSe && se.sets && se.sets.length > 0) {
+      if (seError) {
+        console.warn(
+          "updateCloudWorkoutSession: session_exercise error:",
+          seError,
+        );
+        continue;
+      }
+
+      if (savedSe && se.sets && se.sets.length > 0) {
         const setsPayload = se.sets.map((set, setIdx) => ({
           session_exercise_id: savedSe.id,
           set_number: set.setNumber || setIdx + 1,
-          set_type: set.setType || "regular",
-          weight_kg: Number(set.weightKg || 0),
+          weight: Number(set.weightKg || 0),
           reps: Number(set.reps || 0),
-          duration_seconds: set.durationSeconds ?? null,
-          completed: Boolean(set.completed),
         }));
 
-        await supabase.from("exercise_sets").insert(setsPayload);
+        const { error: setsError } = await supabase
+          .from("exercise_sets")
+          .insert(setsPayload);
+
+        if (setsError) {
+          console.warn(
+            "updateCloudWorkoutSession: exercise_sets error:",
+            setsError,
+          );
+        }
       }
     }
   } catch (err) {

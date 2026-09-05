@@ -1,6 +1,7 @@
 import { useWorkout } from "@/context/WorkoutContext";
 import { colors } from "@/styles/global";
 import { Exercise, RoutineExercise } from "@/types/workout";
+import { createRoutineExercise } from "@/utils/workoutMutations";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useState } from "react";
@@ -15,7 +16,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import ExerciseSelectorModal from "./ExerciseSelectorModal";
+import ExerciseSelectorModal from "../exercises/ExerciseSelectorModal";
 
 type CreateRoutineModalProps = {
   visible: boolean;
@@ -38,15 +39,7 @@ export default function CreateRoutineModal({
   const handleAddExercise = (selected: Exercise) => {
     setExercises((prev) => [
       ...prev,
-      {
-        exerciseId: selected.id,
-        exerciseName: selected.name,
-        category: selected.category,
-        orderIndex: prev.length,
-        targetSets: 3,
-        targetReps: "10",
-        targetWeightKg: 0,
-      },
+      createRoutineExercise(selected, prev.length),
     ]);
   };
 

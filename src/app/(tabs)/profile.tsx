@@ -1,10 +1,10 @@
-import EditWorkoutModal from "@/components/dashboard/EditWorkoutModal";
 import {
   ProfileHeader,
   ProfileHistory,
   ProfileOverview,
   ProfileProgress,
 } from "@/components/profile";
+import EditWorkoutModal from "@/components/workout/history/EditWorkoutModal";
 import { useAuth } from "@/context/AuthContext";
 import { useHealth } from "@/context/HealthContext";
 import { useNutrition } from "@/context/NutritionContext";

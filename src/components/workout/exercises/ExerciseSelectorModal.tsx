@@ -136,7 +136,9 @@ export default function ExerciseSelectorModal({
 
         <View style={styles.itemContent}>
           <Text style={styles.itemName} numberOfLines={1}>
-            {item.name}
+            {item.name
+              .toLowerCase()
+              .replace(/\b\w/g, (char) => char.toUpperCase())}
           </Text>
           <View style={styles.itemMeta}>
             <Text style={styles.itemCategory}>{item.category}</Text>

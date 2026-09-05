@@ -1,10 +1,10 @@
 import DashboardGreeting from "@/components/dashboard/DashboardGreeting";
 import DashboardWorkoutCard from "@/components/dashboard/DashboardWorkoutCard";
 import DateNavigator from "@/components/dashboard/DateNavigator";
-import EditWorkoutModal from "@/components/dashboard/EditWorkoutModal";
 import NutritionOverview from "@/components/dashboard/NutritionOverview";
 import StepsTrackerCard from "@/components/dashboard/StepsTrackerCard";
 import WaterTrackerCard from "@/components/dashboard/WaterTrackerCard";
+import EditWorkoutModal from "@/components/workout/history/EditWorkoutModal";
 import { useAuth } from "@/context/AuthContext";
 import { useNutrition } from "@/context/NutritionContext";
 import { useWorkout } from "@/context/WorkoutContext";

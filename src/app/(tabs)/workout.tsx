@@ -1,11 +1,12 @@
-import ActiveWorkoutModal from "@/components/ActiveWorkoutModal";
-import CreateRoutineModal from "@/components/CreateRoutineModal";
-import EditWorkoutModal from "@/components/dashboard/EditWorkoutModal";
-import WorkoutHistoryCard from "@/components/profile/history/WorkoutHistoryCard";
-import RoutineCard from "@/components/RoutineCard";
+import ActiveWorkoutModal from "@/components/workout/active/ActiveWorkoutModal";
+import EditWorkoutModal from "@/components/workout/history/EditWorkoutModal";
+import WorkoutHistoryCard from "@/components/workout/history/WorkoutHistoryCard";
+import CreateRoutineModal from "@/components/workout/routines/CreateRoutineModal";
+import RoutineCard from "@/components/workout/routines/RoutineCard";
 import { useWorkout } from "@/context/WorkoutContext";
 import { colors, globalStyles } from "@/styles/global";
 import { WorkoutRoutine, WorkoutSession } from "@/types/workout";
+import { formatWorkoutTimer } from "@/utils/workoutCalculations";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
@@ -23,6 +24,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type ActiveTab = "routines" | "history" | "exercises";
+// type ActiveTab = "routines" | "history" | "exercises";
 
 const ROUTINE_CATEGORIES = [
   { key: "all", label: "All" },
@@ -84,12 +86,6 @@ export default function WorkoutScreen() {
   const [exerciseSearch, setExerciseSearch] = useState("");
   const [exerciseCategory, setExerciseCategory] = useState("all");
   const [exerciseEquipment, setExerciseEquipment] = useState("all");
-
-  const formatTimer = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
-  };
 
   const handleStartRoutine = (routine: WorkoutRoutine) => {
     startRoutine(routine);
@@ -168,7 +164,7 @@ export default function WorkoutScreen() {
           <View style={styles.bannerTimer}>
             <Ionicons name="time-outline" size={13} color="#FFFFFF" />
             <Text style={styles.bannerTimerText}>
-              {formatTimer(activeDurationSeconds)}
+              {formatWorkoutTimer(activeDurationSeconds)}
             </Text>
           </View>
         </TouchableOpacity>
@@ -251,7 +247,7 @@ export default function WorkoutScreen() {
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={[
             styles.segmentBtn,
             activeTab === "exercises" && styles.segmentBtnActive,
@@ -278,7 +274,7 @@ export default function WorkoutScreen() {
           >
             Exercises
           </Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
 
       {/* --------------------------------------------------------------------- */}
@@ -313,7 +309,7 @@ export default function WorkoutScreen() {
           </TouchableOpacity>
 
           {/* Search Routines Bar */}
-          <View style={styles.searchBar}>
+          {/* <View style={styles.searchBar}>
             <Ionicons name="search" size={16} color={colors.textSecondary} />
             <TextInput
               style={styles.searchInput}
@@ -331,10 +327,10 @@ export default function WorkoutScreen() {
                 />
               </TouchableOpacity>
             )}
-          </View>
+          </View> */}
 
           {/* Routine Categories Filter Chips */}
-          <ScrollView
+          {/* <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.filterChipsRow}
@@ -361,7 +357,7 @@ export default function WorkoutScreen() {
                 </TouchableOpacity>
               );
             })}
-          </ScrollView>
+          </ScrollView> */}
 
           {/* Routines List */}
           <View style={styles.sectionHeader}>

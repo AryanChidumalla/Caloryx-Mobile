@@ -2,7 +2,7 @@ import { colors } from "@/styles/global";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import WorkoutHistoryCard from "./WorkoutHistoryCard";
+import WorkoutHistoryCard from "../../workout/history/WorkoutHistoryCard";
 
 type ProfileHistoryProps = {
   workoutSessions: any[];

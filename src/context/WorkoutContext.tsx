@@ -1,37 +1,40 @@
 import { useAuth } from "@/context/AuthContext";
 import exerciseData from "@/data/exercises.json";
+import { useWorkoutTimer } from "@/hooks/useWorkoutTimer";
 import {
-  deleteUserRoutine,
-  deleteUserWorkoutSession,
-  fetchUserRoutines,
-  fetchUserWorkoutSessions,
-  saveUserWorkoutSession,
-  syncUserRoutine,
-  updateCloudWorkoutSession,
-} from "@/services/workoutSync";
-import {
-  DEFAULT_ROUTINES,
-  addStoredCustomExercise,
-  addStoredRoutine,
-  addStoredSession,
-  deleteStoredRoutine,
-  deleteStoredSession,
-  getActiveWorkoutCache,
-  getStoredCustomExercises,
-  getStoredRoutines,
-  getStoredSessions,
-  setActiveWorkoutCache,
-  updateStoredRoutine,
-  updateStoredSession,
-} from "@/storage/workoutStorage";
+  WorkoutAuthContext,
+  createWorkoutRoutine,
+  deleteWorkoutRoutine,
+  deleteWorkoutSession,
+  loadWorkoutData,
+  saveCompletedWorkoutSession,
+  saveCustomExercise,
+  syncActiveWorkoutCache,
+  updateWorkoutRoutine,
+  updateWorkoutSession,
+} from "@/services/workoutService";
+import { DEFAULT_ROUTINES } from "@/storage/workoutStorage";
 import {
   Exercise,
   ExerciseSet,
-  SessionExercise,
   WorkoutRoutine,
   WorkoutSession,
 } from "@/types/workout";
-import { getTodayDateString } from "@/utils/date";
+import { formatLocalDate, getTodayDateString } from "@/utils/date";
+import {
+  addExercise,
+  addSet,
+  createEmptySession,
+  createSessionFromRoutine,
+  finalizeSession,
+  removeExercise,
+  removeSet,
+  reorderExercises,
+  replaceExercise,
+  toggleSetCompleted as toggleWorkoutSetCompleted,
+  updateExerciseNotes as updateExerciseNotesMutation,
+  updateSet as updateWorkoutSet,
+} from "@/utils/workoutMutations";
 import * as Haptics from "expo-haptics";
 import React, {
   createContext,
@@ -105,118 +108,108 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
   const { session, mode } = useAuth();
   const userId = session?.user?.id ?? null;
 
-  // const [routines, setRoutines] = useState<WorkoutRoutine[]>(DEFAULT_ROUTINES);
+  const authContext: WorkoutAuthContext = useMemo(
+    () => ({
+      userId,
+      isAuthenticated: mode === "authenticated" && Boolean(userId),
+    }),
+    [userId, mode],
+  );
+
   const [routines, setRoutines] = useState<WorkoutRoutine[]>(DEFAULT_ROUTINES);
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);
-  // const [exercises, setExercises] = useState<Exercise[]>(DEFAULT_EXERCISES);
   const [exercises, setExercises] = useState<Exercise[]>(getExercises());
   const [isLoading, setIsLoading] = useState(true);
 
-  // Active Workout State
+  // Active workout state
   const [activeWorkout, setActiveWorkout] = useState<WorkoutSession | null>(
     null,
   );
-  const [activeDurationSeconds, setActiveDurationSeconds] = useState(0);
-  const [isActivePaused, setIsActivePaused] = useState(false);
 
-  // Timer Ref
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  // Dedicated timer hook
+  const {
+    elapsedSeconds: activeDurationSeconds,
+    isPaused: isActivePaused,
+    startTimer,
+    pauseTimer: pauseWorkout,
+    resumeTimer: resumeWorkout,
+    resetTimer,
+  } = useWorkoutTimer();
 
-  // Load all workouts & cached active session
+  // Track active user ID to purge state on user switch
+  const activeUserIdRef = useRef<string | null | undefined>(undefined);
+  const loadSequenceRef = useRef<number>(0);
+
+  // Load all workouts & cached active session via service layer
   const refreshWorkouts = useCallback(async () => {
+    const currentUserId = authContext.userId;
+    const sequence = ++loadSequenceRef.current;
+
     setIsLoading(true);
+
     try {
-      // const [customEx, cachedActive] = await Promise.all([
-      //   getStoredCustomExercises(),
-      //   getActiveWorkoutCache(),
-      // ]);
+      const data = await loadWorkoutData(authContext);
 
-      // setExercises([...DEFAULT_EXERCISES, ...customEx]);
-
-      const [customEx, cachedActive] = await Promise.all([
-        getStoredCustomExercises(),
-        getActiveWorkoutCache(),
-      ]);
-
-      setExercises([...getExercises(), ...customEx]);
-
-      if (cachedActive) {
-        setActiveWorkout(cachedActive);
-        const started = new Date(cachedActive.startedAt).getTime();
-        const now = Date.now();
-        const elapsed = Math.max(0, Math.floor((now - started) / 1000));
-        setActiveDurationSeconds(elapsed);
+      // Discard stale responses if user switched while load was in-flight
+      if (
+        sequence !== loadSequenceRef.current ||
+        activeUserIdRef.current !== currentUserId
+      ) {
+        return;
       }
 
-      if (mode === "authenticated" && userId) {
-        const [cloudRoutines, cloudSessions] = await Promise.all([
-          fetchUserRoutines(userId),
-          fetchUserWorkoutSessions(userId),
-        ]);
+      setExercises([...getExercises(), ...data.customExercises]);
+      setRoutines(data.routines);
+      setSessions(data.sessions);
 
-        // Merge cloud routines with default templates
-        const combinedRoutines = [
-          ...cloudRoutines,
-          ...DEFAULT_ROUTINES.filter(
-            (def) => !cloudRoutines.some((cr) => cr.name === def.name),
-          ),
-        ];
-
-        setRoutines(combinedRoutines);
-        setSessions(cloudSessions);
+      if (data.cachedActive) {
+        setActiveWorkout(data.cachedActive);
+        const started = new Date(data.cachedActive.startedAt).getTime();
+        const elapsed = Math.max(0, Math.floor((Date.now() - started) / 1000));
+        startTimer(elapsed);
       } else {
-        const [localRoutines, localSessions] = await Promise.all([
-          getStoredRoutines(),
-          getStoredSessions(),
-        ]);
-        setRoutines(localRoutines);
-        setSessions(localSessions);
+        setActiveWorkout(null);
+        resetTimer();
       }
     } catch (err) {
       console.warn("Failed to load workout data:", err);
     } finally {
-      setIsLoading(false);
+      if (sequence === loadSequenceRef.current) {
+        setIsLoading(false);
+      }
     }
-  }, [mode, userId]);
+  }, [authContext, startTimer, resetTimer]);
 
   useEffect(() => {
+    // Detect user switch or logout
+    if (activeUserIdRef.current !== authContext.userId) {
+      activeUserIdRef.current = authContext.userId;
+      // Instantly wipe previous user's in-memory data
+      setSessions([]);
+      setRoutines(DEFAULT_ROUTINES);
+      setActiveWorkout(null);
+      resetTimer();
+    }
+
     // eslint-disable-next-line react-hooks/set-state-in-effect
     refreshWorkouts();
-  }, [refreshWorkouts]);
+  }, [authContext.userId, refreshWorkouts, resetTimer]);
 
-  // Timer runner for active workout
+  // Sync active workout to recovery cache whenever it changes
   useEffect(() => {
-    if (activeWorkout && !isActivePaused) {
-      timerRef.current = setInterval(() => {
-        setActiveDurationSeconds((prev) => prev + 1);
-      }, 1000);
-    } else {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-    }
-
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-    };
-  }, [activeWorkout, isActivePaused]);
-
-  // Sync active workout to local cache whenever it changes
-  useEffect(() => {
-    setActiveWorkoutCache(activeWorkout);
-  }, [activeWorkout]);
+    syncActiveWorkoutCache(activeWorkout, authContext);
+  }, [activeWorkout, authContext]);
 
   // Today's completed workout for Dashboard widget
   const todayWorkout = useMemo(() => {
     const todayStr = getTodayDateString();
+
     return (
       sessions.find((s) => {
-        if (!s.completedAt && !s.startedAt) return false;
-        const date = (s.completedAt || s.startedAt).substring(0, 10);
+        const raw = s.startedAt || s.completedAt;
+        if (!raw) return false;
+        const d = new Date(raw);
+        const date = !isNaN(d.getTime()) ? formatLocalDate(d) : raw.substring(0, 10);
         return date === todayStr;
       }) || null
     );
@@ -226,222 +219,92 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
   // Active Workout Actions
   // ---------------------------------------------------------------------------
 
-  const startRoutine = useCallback((routine: WorkoutRoutine) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const now = new Date().toISOString();
+  const startRoutine = useCallback(
+    (routine: WorkoutRoutine) => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    // Deep-clone exercises into session exercises with concrete sets
-    const sessionExercises: SessionExercise[] = routine.exercises.map(
-      (re, exIdx) => {
-        const setCount = Math.max(1, re.targetSets || 3);
-        const parsedReps = parseInt(re.targetReps) || 10;
-        const targetWeight = re.targetWeightKg || 0;
+      const newSession = createSessionFromRoutine(routine);
 
-        const sets: ExerciseSet[] = Array.from(
-          { length: setCount },
-          (_, sIdx) => ({
-            id: `set-${Date.now()}-${exIdx}-${sIdx}`,
-            setNumber: sIdx + 1,
-            setType: "regular",
-            weightKg: targetWeight,
-            reps: parsedReps,
-            durationSeconds: re.targetDurationSeconds,
-            completed: false,
-          }),
-        );
+      setActiveWorkout(newSession);
+      startTimer(0);
+    },
+    [startTimer],
+  );
 
-        return {
-          id: `se-${Date.now()}-${exIdx}`,
-          exerciseId: re.exerciseId,
-          exerciseName: re.exerciseName,
-          category: re.category,
-          orderIndex: exIdx,
-          notes: re.notes,
-          sets,
-        };
-      },
-    );
+  const startEmptyWorkout = useCallback(
+    (name = "Quick Workout") => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    const newSession: WorkoutSession = {
-      id: `session-${Date.now()}`,
-      routineId: routine.id,
-      name: routine.name,
-      startedAt: now,
-      durationSeconds: 0,
-      totalVolumeKg: 0,
-      exercises: sessionExercises,
-      createdAt: now,
-    };
+      const newSession = createEmptySession(name);
 
-    setActiveWorkout(newSession);
-    setActiveDurationSeconds(0);
-    setIsActivePaused(false);
-  }, []);
-
-  const startEmptyWorkout = useCallback((name = "Quick Workout") => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const now = new Date().toISOString();
-    const newSession: WorkoutSession = {
-      id: `session-${Date.now()}`,
-      name,
-      startedAt: now,
-      durationSeconds: 0,
-      totalVolumeKg: 0,
-      exercises: [],
-      createdAt: now,
-    };
-
-    setActiveWorkout(newSession);
-    setActiveDurationSeconds(0);
-    setIsActivePaused(false);
-  }, []);
-
-  const resumeWorkout = useCallback(() => {
-    setIsActivePaused(false);
-  }, []);
-
-  const pauseWorkout = useCallback(() => {
-    setIsActivePaused(true);
-  }, []);
+      setActiveWorkout(newSession);
+      startTimer(0);
+    },
+    [startTimer],
+  );
 
   const cancelWorkout = useCallback(() => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+
     setActiveWorkout(null);
-    setActiveDurationSeconds(0);
-    setIsActivePaused(false);
-    setActiveWorkoutCache(null);
-  }, []);
+    resetTimer();
+    syncActiveWorkoutCache(null, authContext);
+  }, [resetTimer, authContext]);
 
   const finishWorkout =
     useCallback(async (): Promise<WorkoutSession | null> => {
       if (!activeWorkout) return null;
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      const now = new Date().toISOString();
 
-      // Calculate total volume (weight * reps for completed sets)
-      let volume = 0;
-      for (const ex of activeWorkout.exercises) {
-        for (const set of ex.sets) {
-          if (set.completed && set.weightKg > 0 && set.reps > 0) {
-            volume += set.weightKg * set.reps;
-          }
-        }
-      }
-
-      const completedSession: WorkoutSession = {
-        ...activeWorkout,
-        completedAt: now,
-        durationSeconds: activeDurationSeconds,
-        totalVolumeKg: Math.round(volume),
-      };
+      const completedSession = finalizeSession(
+        activeWorkout,
+        activeDurationSeconds,
+      );
 
       try {
-        if (mode === "authenticated" && userId) {
-          const saved = await saveUserWorkoutSession(userId, completedSession);
-          setSessions((prev) => [saved, ...prev]);
-        } else {
-          const saved = await addStoredSession(completedSession);
-          setSessions((prev) => [saved, ...prev]);
-        }
-      } catch (err) {
-        console.warn("Failed to persist finished workout to cloud:", err);
-        // Always persist to local storage as fallback
-        const saved = await addStoredSession(completedSession);
+        const saved = await saveCompletedWorkoutSession(
+          completedSession,
+          authContext,
+        );
+
         setSessions((prev) => [saved, ...prev]);
+        return saved;
       } finally {
         setActiveWorkout(null);
-        setActiveDurationSeconds(0);
-        setIsActivePaused(false);
-        await setActiveWorkoutCache(null);
+        resetTimer();
       }
-
-      return completedSession;
-    }, [activeWorkout, activeDurationSeconds, mode, userId]);
+    }, [activeWorkout, activeDurationSeconds, authContext, resetTimer]);
 
   // ---------------------------------------------------------------------------
-  // Modifying Exercises & Sets inside Active Workout
+  // Modifying Exercises & Sets inside Active Workout (Pure Mutations)
   // ---------------------------------------------------------------------------
 
   const addExerciseToActive = useCallback((exercise: Exercise) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
     setActiveWorkout((current) => {
       if (!current) return current;
-
-      const newEx: SessionExercise = {
-        id: `se-${Date.now()}-${current.exercises.length}`,
-        exerciseId: exercise.id,
-        exerciseName: exercise.name,
-        category: exercise.category,
-        orderIndex: current.exercises.length,
-        notes: "",
-        sets: [
-          {
-            id: `set-${Date.now()}-1`,
-            setNumber: 1,
-            setType: "regular",
-            weightKg: 0,
-            reps: 10,
-            completed: false,
-          },
-          {
-            id: `set-${Date.now()}-2`,
-            setNumber: 2,
-            setType: "regular",
-            weightKg: 0,
-            reps: 10,
-            completed: false,
-          },
-          {
-            id: `set-${Date.now()}-3`,
-            setNumber: 3,
-            setType: "regular",
-            weightKg: 0,
-            reps: 10,
-            completed: false,
-          },
-        ],
-      };
-
-      return {
-        ...current,
-        exercises: [...current.exercises, newEx],
-      };
+      return addExercise(current, exercise);
     });
   }, []);
 
   const removeExerciseFromActive = useCallback((exerciseIndex: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
     setActiveWorkout((current) => {
       if (!current) return current;
-      const updated = current.exercises.filter(
-        (_, idx) => idx !== exerciseIndex,
-      );
-      return {
-        ...current,
-        exercises: updated.map((e, i) => ({ ...e, orderIndex: i })),
-      };
+      return removeExercise(current, exerciseIndex);
     });
   }, []);
 
   const replaceExerciseInActive = useCallback(
     (exerciseIndex: number, newExercise: Exercise) => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
       setActiveWorkout((current) => {
         if (!current) return current;
-        const updated = [...current.exercises];
-        if (updated[exerciseIndex]) {
-          updated[exerciseIndex] = {
-            ...updated[exerciseIndex],
-            exerciseId: newExercise.id,
-            exerciseName: newExercise.name,
-            category: newExercise.category,
-          };
-        }
-        return {
-          ...current,
-          exercises: updated,
-        };
+        return replaceExercise(current, exerciseIndex, newExercise);
       });
     },
     [],
@@ -450,29 +313,20 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
   const reorderActiveExercises = useCallback(
     (fromIndex: number, toIndex: number) => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
       setActiveWorkout((current) => {
         if (!current) return current;
-        const items = [...current.exercises];
-        const [moved] = items.splice(fromIndex, 1);
-        items.splice(toIndex, 0, moved);
-        return {
-          ...current,
-          exercises: items.map((e, idx) => ({ ...e, orderIndex: idx })),
-        };
+        return reorderExercises(current, fromIndex, toIndex);
       });
     },
     [],
   );
 
-  const updateExerciseNotes = useCallback(
+  const updateActiveExerciseNotes = useCallback(
     (exerciseIndex: number, notes: string) => {
       setActiveWorkout((current) => {
         if (!current) return current;
-        const exercises = [...current.exercises];
-        if (exercises[exerciseIndex]) {
-          exercises[exerciseIndex] = { ...exercises[exerciseIndex], notes };
-        }
-        return { ...current, exercises };
+        return updateExerciseNotesMutation(current, exerciseIndex, notes);
       });
     },
     [],
@@ -480,51 +334,20 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
 
   const addSetToExercise = useCallback((exerciseIndex: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
     setActiveWorkout((current) => {
       if (!current) return current;
-      const exercises = [...current.exercises];
-      const targetEx = exercises[exerciseIndex];
-      if (!targetEx) return current;
-
-      const lastSet = targetEx.sets[targetEx.sets.length - 1];
-      const nextSetNumber = targetEx.sets.length + 1;
-      const newSet: ExerciseSet = {
-        id: `set-${Date.now()}-${nextSetNumber}`,
-        setNumber: nextSetNumber,
-        setType: "regular",
-        weightKg: lastSet?.weightKg ?? 0,
-        reps: lastSet?.reps ?? 10,
-        completed: false,
-      };
-
-      exercises[exerciseIndex] = {
-        ...targetEx,
-        sets: [...targetEx.sets, newSet],
-      };
-
-      return { ...current, exercises };
+      return addSet(current, exerciseIndex);
     });
   }, []);
 
   const removeSetFromExercise = useCallback(
     (exerciseIndex: number, setIndex: number) => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
       setActiveWorkout((current) => {
         if (!current) return current;
-        const exercises = [...current.exercises];
-        const targetEx = exercises[exerciseIndex];
-        if (!targetEx) return current;
-
-        const updatedSets = targetEx.sets
-          .filter((_, idx) => idx !== setIndex)
-          .map((s, i) => ({ ...s, setNumber: i + 1 }));
-
-        exercises[exerciseIndex] = {
-          ...targetEx,
-          sets: updatedSets,
-        };
-
-        return { ...current, exercises };
+        return removeSet(current, exerciseIndex, setIndex);
       });
     },
     [],
@@ -538,15 +361,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     ) => {
       setActiveWorkout((current) => {
         if (!current) return current;
-        const exercises = [...current.exercises];
-        const targetEx = exercises[exerciseIndex];
-        if (!targetEx || !targetEx.sets[setIndex]) return current;
-
-        const sets = [...targetEx.sets];
-        sets[setIndex] = { ...sets[setIndex], ...updates };
-        exercises[exerciseIndex] = { ...targetEx, sets };
-
-        return { ...current, exercises };
+        return updateWorkoutSet(current, exerciseIndex, setIndex, updates);
       });
     },
     [],
@@ -555,18 +370,10 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
   const toggleSetCompleted = useCallback(
     (exerciseIndex: number, setIndex: number) => {
       Haptics.selectionAsync();
+
       setActiveWorkout((current) => {
         if (!current) return current;
-        const exercises = [...current.exercises];
-        const targetEx = exercises[exerciseIndex];
-        if (!targetEx || !targetEx.sets[setIndex]) return current;
-
-        const sets = [...targetEx.sets];
-        const currentDone = sets[setIndex].completed;
-        sets[setIndex] = { ...sets[setIndex], completed: !currentDone };
-        exercises[exerciseIndex] = { ...targetEx, sets };
-
-        return { ...current, exercises };
+        return toggleWorkoutSetCompleted(current, exerciseIndex, setIndex);
       });
     },
     [],
@@ -580,54 +387,30 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     async (
       routineData: Omit<WorkoutRoutine, "id" | "createdAt" | "updatedAt">,
     ): Promise<WorkoutRoutine> => {
-      let created: WorkoutRoutine;
-      if (mode === "authenticated" && userId) {
-        const full: WorkoutRoutine = {
-          ...routineData,
-          id: `routine-${Date.now()}`,
-          userId,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          isCustom: true,
-        };
-        created = await syncUserRoutine(userId, full);
-      } else {
-        created = await addStoredRoutine(routineData);
-      }
-
+      const created = await createWorkoutRoutine(routineData, authContext);
       setRoutines((prev) => [created, ...prev]);
       return created;
     },
-    [mode, userId],
+    [authContext],
   );
 
   const editRoutine = useCallback(
     async (routine: WorkoutRoutine): Promise<WorkoutRoutine> => {
-      let updated: WorkoutRoutine;
-      if (mode === "authenticated" && userId) {
-        updated = await syncUserRoutine(userId, routine);
-      } else {
-        updated = await updateStoredRoutine(routine);
-      }
-
+      const updated = await updateWorkoutRoutine(routine, authContext);
       setRoutines((prev) =>
         prev.map((r) => (r.id === updated.id ? updated : r)),
       );
       return updated;
     },
-    [mode, userId],
+    [authContext],
   );
 
   const deleteRoutine = useCallback(
     async (id: string): Promise<void> => {
-      if (mode === "authenticated" && userId) {
-        await deleteUserRoutine(userId, id);
-      } else {
-        await deleteStoredRoutine(id);
-      }
+      await deleteWorkoutRoutine(id, authContext);
       setRoutines((prev) => prev.filter((r) => r.id !== id));
     },
-    [mode, userId],
+    [authContext],
   );
 
   // ---------------------------------------------------------------------------
@@ -638,8 +421,10 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     (dateStr: string): WorkoutSession | null => {
       return (
         sessions.find((s) => {
-          if (!s.completedAt && !s.startedAt) return false;
-          const date = (s.completedAt || s.startedAt).substring(0, 10);
+          const raw = s.startedAt || s.completedAt;
+          if (!raw) return false;
+          const d = new Date(raw);
+          const date = !isNaN(d.getTime()) ? formatLocalDate(d) : raw.substring(0, 10);
           return date === dateStr;
         }) || null
       );
@@ -650,40 +435,42 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
   const updateSession = useCallback(
     async (updatedSession: WorkoutSession): Promise<void> => {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      if (mode === "authenticated" && userId) {
-        await updateCloudWorkoutSession(userId, updatedSession);
-      }
-      await updateStoredSession(updatedSession);
-      setSessions((prev) =>
-        prev.map((s) => (s.id === updatedSession.id ? updatedSession : s)),
-      );
+
+      await updateWorkoutSession(updatedSession, authContext);
+
+      setSessions((prev) => {
+        const updated = prev.map((s) =>
+          s.id === updatedSession.id ? updatedSession : s,
+        );
+        return [...updated].sort((a, b) => {
+          const timeA = new Date(a.startedAt || a.completedAt || 0).getTime();
+          const timeB = new Date(b.startedAt || b.completedAt || 0).getTime();
+          return timeB - timeA;
+        });
+      });
     },
-    [mode, userId],
+    [authContext],
   );
 
   const deleteSession = useCallback(
     async (id: string): Promise<void> => {
-      if (mode === "authenticated" && userId) {
-        await deleteUserWorkoutSession(userId, id);
-      } else {
-        await deleteStoredSession(id);
-      }
+      await deleteWorkoutSession(id, authContext);
       setSessions((prev) => prev.filter((s) => s.id !== id));
     },
-    [mode, userId],
+    [authContext],
   );
 
   const createCustomExercise = useCallback(
     async (exerciseData: Omit<Exercise, "id">): Promise<Exercise> => {
-      const created = await addStoredCustomExercise(exerciseData);
+      const created = await saveCustomExercise(exerciseData, authContext);
       setExercises((prev) => [...prev, created]);
       return created;
     },
-    [],
+    [authContext],
   );
 
   const contextValue = useMemo(
-    () => ({
+    (): WorkoutContextType => ({
       routines,
       sessions,
       exercises,
@@ -703,7 +490,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
       removeExerciseFromActive,
       replaceExerciseInActive,
       reorderActiveExercises,
-      updateExerciseNotes,
+      updateExerciseNotes: updateActiveExerciseNotes,
       addSetToExercise,
       removeSetFromExercise,
       updateSet,
@@ -736,7 +523,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
       removeExerciseFromActive,
       replaceExerciseInActive,
       reorderActiveExercises,
-      updateExerciseNotes,
+      updateActiveExerciseNotes,
       addSetToExercise,
       removeSetFromExercise,
       updateSet,
@@ -760,9 +547,11 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
 
 export function useWorkout(): WorkoutContextType {
   const context = useContext(WorkoutContext);
+
   if (!context) {
     throw new Error("useWorkout must be used within a WorkoutProvider");
   }
+
   return context;
 }
 

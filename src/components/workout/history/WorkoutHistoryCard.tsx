@@ -1,5 +1,9 @@
 import { colors } from "@/styles/global";
 import { WorkoutSession } from "@/types/workout";
+import {
+  calculateTotalExercises,
+  calculateTotalSets,
+} from "@/utils/workoutCalculations";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
@@ -24,10 +28,8 @@ export default function WorkoutHistoryCard({
   const [isExpanded, setIsExpanded] = useState(false);
 
   const mins = Math.round((session.durationSeconds || 0) / 60);
-  const totalSets = session.exercises.reduce(
-    (acc, ex) => acc + (ex.sets?.length || 0),
-    0,
-  );
+  const totalExercises = calculateTotalExercises(session);
+  const totalSets = calculateTotalSets(session);
 
   const formatDate = (isoStr: string) => {
     try {
@@ -113,8 +115,8 @@ export default function WorkoutHistoryCard({
         <View style={styles.metricItem}>
           <Ionicons name="barbell-outline" size={13} color={colors.textSecondary} />
           <Text style={styles.metricText}>
-            {session.exercises.length}{" "}
-            {session.exercises.length === 1 ? "exercise" : "exercises"}
+            {totalExercises}{" "}
+            {totalExercises === 1 ? "exercise" : "exercises"}
           </Text>
         </View>
         <View style={styles.metricDivider} />
@@ -122,13 +124,13 @@ export default function WorkoutHistoryCard({
           <Ionicons name="layers-outline" size={13} color={colors.textSecondary} />
           <Text style={styles.metricText}>{totalSets} sets</Text>
         </View>
-        {session.totalVolumeKg > 0 && (
+        {(session.totalVolumeKg || 0) > 0 && (
           <>
             <View style={styles.metricDivider} />
             <View style={styles.metricItem}>
               <Ionicons name="trophy-outline" size={13} color={colors.protein} />
               <Text style={[styles.metricText, { color: colors.protein }]}>
-                {session.totalVolumeKg.toLocaleString()} kg
+                {(session.totalVolumeKg || 0).toLocaleString()} kg
               </Text>
             </View>
           </>
@@ -138,13 +140,13 @@ export default function WorkoutHistoryCard({
       {/* Expanded Exercises Breakdown */}
       {isExpanded && (
         <View style={styles.expandedSection}>
-          {session.exercises.map((ex, idx) => (
+          {(session.exercises || []).map((ex, idx) => (
             <View key={ex.id || `hist-ex-${idx}`} style={styles.expandedExercise}>
               <Text style={styles.exNameText}>
                 {idx + 1}. {ex.exerciseName}
               </Text>
               <View style={styles.setsWrap}>
-                {ex.sets.map((set, sIdx) => (
+                {(ex.sets || []).map((set, sIdx) => (
                   <View key={set.id || `hist-set-${sIdx}`} style={styles.setChip}>
                     <Text style={styles.setChipText}>
                       {set.weightKg > 0 ? `${set.weightKg}kg × ` : ""}

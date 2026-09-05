@@ -23,6 +23,8 @@ export default function ExerciseDetailsScreen() {
 
   const exercise = exercises.find((ex) => ex.id === id);
 
+  console.log(exercise);
+
   if (!exercise) {
     return (
       <View style={styles.container}>
@@ -84,14 +86,16 @@ export default function ExerciseDetailsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Muscles</Text>
 
-          <View style={styles.muscleRow}>
+          {/* <View style={styles.muscleRow}>
             <Text style={styles.muscleLabel}>Primary</Text>
             <Text style={styles.muscleValue}>
               {exercise.muscleGroup || "—"}
             </Text>
-          </View>
+          </View> */}
 
-          {Boolean(exercise.secondaryMuscles && exercise.secondaryMuscles.length > 0) && (
+          {Boolean(
+            exercise.secondaryMuscles && exercise.secondaryMuscles.length > 0,
+          ) && (
             <View style={styles.muscleRow}>
               <Text style={styles.muscleLabel}>Secondary</Text>
               <Text style={styles.muscleValue}>

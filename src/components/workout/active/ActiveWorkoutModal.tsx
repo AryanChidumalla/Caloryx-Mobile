@@ -1,6 +1,10 @@
 import { useWorkout } from "@/context/WorkoutContext";
 import { colors } from "@/styles/global";
 import { Exercise } from "@/types/workout";
+import {
+  calculateCompletedSets,
+  formatWorkoutTimer,
+} from "@/utils/workoutCalculations";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useState } from "react";
@@ -15,8 +19,8 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import ExerciseCard from "./ExerciseCard";
-import ExerciseSelectorModal from "./ExerciseSelectorModal";
+import ExerciseCard from "../exercises/ExerciseCard";
+import ExerciseSelectorModal from "../exercises/ExerciseSelectorModal";
 
 type ActiveWorkoutModalProps = {
   visible: boolean;
@@ -54,21 +58,8 @@ export default function ActiveWorkoutModal({
     return null;
   }
 
-  const formatTimer = (seconds: number) => {
-    const hrs = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    if (hrs > 0) {
-      return `${hrs}:${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
-    }
-    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
-  };
-
   const handleFinish = async () => {
-    const completedCount = activeWorkout.exercises.reduce(
-      (total, ex) => total + ex.sets.filter((s) => s.completed).length,
-      0,
-    );
+    const completedCount = calculateCompletedSets(activeWorkout);
 
     Alert.alert(
       "Finish Workout",
@@ -159,7 +150,7 @@ export default function ActiveWorkoutModal({
                 isActivePaused && styles.timerTextPaused,
               ]}
             >
-              {formatTimer(activeDurationSeconds)}
+              {formatWorkoutTimer(activeDurationSeconds)}
             </Text>
           </View>
 

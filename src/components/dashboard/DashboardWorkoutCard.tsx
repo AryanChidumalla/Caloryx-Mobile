@@ -1,6 +1,11 @@
 import { useWorkout } from "@/context/WorkoutContext";
 import { colors } from "@/styles/global";
 import { WorkoutSession } from "@/types/workout";
+import {
+  calculateTotalExercises,
+  calculateTotalSets,
+  formatWorkoutTimer,
+} from "@/utils/workoutCalculations";
 import { isToday } from "@/utils/date";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -25,13 +30,6 @@ export default function DashboardWorkoutCard({
   const isTodayDate = !date || isToday(date);
 
   const workoutForDate = date ? getWorkoutForDate(date) : todayWorkout;
-
-  const formatTimer = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-
-    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
-  };
 
   /*
    * =========================================================
@@ -61,7 +59,7 @@ export default function DashboardWorkoutCard({
             <View style={styles.liveDot} />
 
             <Text style={styles.timerText}>
-              {formatTimer(activeDurationSeconds)}
+              {formatWorkoutTimer(activeDurationSeconds)}
             </Text>
           </View>
         </View>
@@ -71,7 +69,7 @@ export default function DashboardWorkoutCard({
             <Text style={styles.footerLabel}>Exercises</Text>
 
             <Text style={styles.footerValue}>
-              {activeWorkout.exercises.length}
+              {calculateTotalExercises(activeWorkout)}
             </Text>
           </View>
 
@@ -97,11 +95,8 @@ export default function DashboardWorkoutCard({
 
   if (workoutForDate) {
     const mins = Math.round((workoutForDate.durationSeconds || 0) / 60);
-
-    const setsCount = workoutForDate.exercises.reduce(
-      (total, exercise) => total + (exercise.sets?.length || 0),
-      0,
-    );
+    const totalExercises = calculateTotalExercises(workoutForDate);
+    const setsCount = calculateTotalSets(workoutForDate);
 
     return (
       <View style={styles.card}>
@@ -147,9 +142,7 @@ export default function DashboardWorkoutCard({
           <View style={styles.statDivider} />
 
           <View style={styles.stat}>
-            <Text style={styles.statValue}>
-              {workoutForDate.exercises.length}
-            </Text>
+            <Text style={styles.statValue}>{totalExercises}</Text>
 
             <Text style={styles.statLabel}>Exercises</Text>
           </View>

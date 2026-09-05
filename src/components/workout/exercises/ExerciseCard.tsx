@@ -1,7 +1,7 @@
 import { colors } from "@/styles/global";
 import { ExerciseSet, SessionExercise } from "@/types/workout";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   Alert,
   StyleSheet,
@@ -54,7 +54,9 @@ export default function ExerciseCard({
     );
   };
 
-  const isTimed = exercise.category === "cardio" || exercise.exerciseName.toLowerCase().includes("plank");
+  const isTimed =
+    exercise.category === "cardio" ||
+    exercise.exerciseName.toLowerCase().includes("plank");
 
   return (
     <View style={styles.card}>
@@ -62,8 +64,11 @@ export default function ExerciseCard({
       <View style={styles.header}>
         <View style={styles.titleContainer}>
           <Text style={styles.exerciseName} numberOfLines={1}>
-            {exercise.exerciseName}
+            {exercise.exerciseName
+              .toLowerCase()
+              .replace(/\b\w/g, (char) => char.toUpperCase())}
           </Text>
+
           {exercise.category && (
             <View style={styles.categoryBadge}>
               <Text style={styles.categoryText}>{exercise.category}</Text>
@@ -79,7 +84,11 @@ export default function ExerciseCard({
               onPress={onMoveUp}
               hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
             >
-              <Ionicons name="chevron-up" size={16} color={colors.textSecondary} />
+              <Ionicons
+                name="chevron-up"
+                size={16}
+                color={colors.textSecondary}
+              />
             </TouchableOpacity>
           )}
 
@@ -102,7 +111,11 @@ export default function ExerciseCard({
             onPress={onReplaceExercise}
             hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
           >
-            <Ionicons name="swap-horizontal" size={16} color={colors.textSecondary} />
+            <Ionicons
+              name="swap-horizontal"
+              size={16}
+              color={colors.textSecondary}
+            />
           </TouchableOpacity>
 
           <TouchableOpacity
