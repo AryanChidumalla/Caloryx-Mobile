@@ -126,7 +126,7 @@ export default function MealForm({
                 <Ionicons
                   name={item.icon}
                   size={14}
-                  color={isSelected ? colors.background : colors.textSecondary}
+                  color={isSelected ? colors.accent : colors.textSecondary}
                 />
 
                 <Text
@@ -356,8 +356,8 @@ const styles = StyleSheet.create({
   },
 
   mealTypePillSelected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: colors.accentMuted,
+    borderColor: colors.accentMuted,
   },
 
   mealTypeLabel: {
@@ -367,7 +367,7 @@ const styles = StyleSheet.create({
   },
 
   mealTypeLabelSelected: {
-    color: colors.background,
+    color: colors.accent,
   },
 
   inputGroup: {},
@@ -411,7 +411,7 @@ const styles = StyleSheet.create({
   },
 
   estimateChipText: {
-    fontSize: 11,
+    fontSize: 12,
     color: colors.text,
     fontWeight: "600",
   },
@@ -464,7 +464,7 @@ const styles = StyleSheet.create({
   },
 
   submitButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.accentMuted,
     borderRadius: 14,
     paddingVertical: 16,
     alignItems: "center",
@@ -472,7 +472,7 @@ const styles = StyleSheet.create({
   },
 
   submitButtonText: {
-    color: colors.background,
+    color: colors.accent,
     fontSize: 16,
     fontWeight: "800",
   },
@@ -489,7 +489,7 @@ const styles = StyleSheet.create({
 
   deleteButtonText: {
     color: colors.alert,
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "700",
   },
 });
