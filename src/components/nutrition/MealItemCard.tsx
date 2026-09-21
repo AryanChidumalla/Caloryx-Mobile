@@ -1,9 +1,7 @@
 import { colors } from "@/styles/global";
 import { MealEntry } from "@/types/nutrition";
 import { formatMacroString } from "@/utils/nutritionCalculations";
-import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import React from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 type MealItemCardProps = {
@@ -66,11 +64,11 @@ export default function MealItemCard({
           </View>
         </View>
 
-        {hasServingDetail ? (
+        {/* {hasServingDetail ? (
           <Text style={styles.servingText} numberOfLines={1}>
             {servingLabel}
           </Text>
-        ) : null}
+        ) : null} */}
 
         <View style={styles.bottomRow}>
           <Text style={styles.macroText}>
@@ -80,11 +78,11 @@ export default function MealItemCard({
               fat: meal.fat,
             })}
           </Text>
-          <Ionicons
+          {/* <Ionicons
             name="chevron-forward"
             size={14}
             color={colors.textSecondary}
-          />
+          /> */}
         </View>
       </View>
     </TouchableOpacity>
@@ -94,14 +92,16 @@ export default function MealItemCard({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surfaceLight,
-    borderRadius: 14,
+    borderRadius: 8,
     padding: 12,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.05)",
+    // paddingBottom: 8,
+    // paddingTop: 8,
+    // marginBottom: 8,
+    // borderWidth: 1,
+    // borderColor: "rgba(255, 255, 255, 0.05)",
   },
   content: {
-    gap: 4,
+    // gap: 4,
   },
   topRow: {
     flexDirection: "row",
@@ -109,20 +109,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   name: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "600",
     color: colors.text,
     flex: 1,
-    marginRight: 8,
+    marginRight: 48,
   },
   calorieBadge: {
-    backgroundColor: colors.caloriesMuted,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
+    // backgroundColor: colors.caloriesMuted,
+    // paddingHorizontal: 12,
+    // paddingVertical: 4,
+    // borderRadius: 8,
   },
   calorieText: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "700",
     color: colors.calories,
   },
@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 2,
+    // marginTop: 2,
   },
   macroText: {
     fontSize: 12,

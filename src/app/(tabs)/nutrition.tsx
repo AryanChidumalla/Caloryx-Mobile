@@ -1,11 +1,11 @@
 import GoalSettingsModal from "@/components/dashboard/GoalSettingsModal";
-import MealSection from "@/components/MealSection";
+import MealSection from "@/components/nutrition/MealSection";
+import SummarySection from "@/components/nutrition/SummarySection";
 import { useAuth } from "@/context/AuthContext";
 import { useNutrition } from "@/context/NutritionContext";
 import { colors, globalStyles } from "@/styles/global";
 import { MealEntry, MealType } from "@/types/nutrition";
 import { formatDateForDisplay, isToday } from "@/utils/date";
-import { formatMacroString } from "@/utils/nutritionCalculations";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
@@ -72,24 +72,6 @@ export default function NutritionScreen() {
               Daily meals, macro tracking & foods
             </Text>
           </View>
-
-          <View style={styles.headerActions}>
-            <TouchableOpacity
-              style={styles.headerBtn}
-              onPress={() => router.navigate("/(tabs)/meals")}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons name="calendar-outline" size={18} color={colors.text} />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.headerBtn}
-              onPress={() => setGoalsModalVisible(true)}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons name="options-outline" size={18} color={colors.text} />
-            </TouchableOpacity>
-          </View>
         </View>
 
         {/* User Greeting & Date Bar */}
@@ -110,26 +92,11 @@ export default function NutritionScreen() {
         </View>
 
         {/* Day Totals Summary Pill */}
-        <View style={styles.summaryPill}>
-          <View style={styles.summaryTop}>
-            <Text style={styles.summaryCalText}>
-              {dailyTotals.calories}{" "}
-              <Text style={styles.summaryGoalText}>
-                / {goals.calories} kcal
-              </Text>
-            </Text>
-            <TouchableOpacity
-              style={styles.logActionBtn}
-              onPress={() => handleAddMealForType("breakfast")}
-            >
-              <Ionicons name="add" size={16} color="#0A0A0A" />
-              <Text style={styles.logActionText}>Log Food</Text>
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.summaryMacroText}>
-            {formatMacroString(dailyTotals)}
-          </Text>
-        </View>
+        <SummarySection
+          isCurrentDateToday={isCurrentDateToday}
+          dailyTotals={dailyTotals}
+          goals={goals}
+        />
 
         {/* 1. Breakfast */}
         <MealSection
@@ -220,35 +187,6 @@ const styles = StyleSheet.create({
     borderColor: colors.surfaceBorder,
     justifyContent: "center",
     alignItems: "center",
-  },
-  summaryPill: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.surfaceBorder,
-    padding: 14,
-    marginBottom: 16,
-  },
-  summaryTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  summaryCalText: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: colors.text,
-  },
-  summaryGoalText: {
-    fontSize: 13,
-    fontWeight: "500",
-    color: colors.textSecondary,
-  },
-  summaryMacroText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    fontWeight: "500",
   },
   logActionBtn: {
     flexDirection: "row",

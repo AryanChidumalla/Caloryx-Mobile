@@ -30,7 +30,8 @@ export const colors = {
   textSecondary: "#888888",
   textMuted: "#555555",
 
-  alert: "#EF4444",
+  // alert: "#EF4444",
+  alert: "#F87171",
   alertBg: "rgba(239, 68, 68, 0.15)",
 
   warning: "#F59E0B",
@@ -38,6 +39,46 @@ export const colors = {
 
   success: "#10B981",
   successBg: "rgba(16, 185, 129, 0.15)",
+
+  // New Stuff
+  // ─── Accent ─────────────────────────────
+  // Lime
+  // accent: "#A3E635",
+  // accentMuted: "rgba(163, 230, 53, 0.12)",
+  // accentDark: "#84CC16",
+  // Blue
+  accent: "#3B82F6",
+  accentMuted: "rgba(59, 130, 246, 0.12)",
+  accentDark: "#2563EB",
+
+  overWarning: "#F87171",
+  overWarningMuted: "rgba(251, 191, 36, 0.12)",
+
+  overDanger: "#F87171",
+  overDangerMuted: "rgba(248, 113, 113, 0.12)",
+
+  // ─── Workout ──────────────────────────
+  workout: "#8B5CF6", // Purple
+  workoutMuted: "rgba(139, 92, 246, 0.12)",
+
+  strength: "#60A5FA", // Blue
+  cardio: "#FB7185", // Pink/coral
+  mobility: "#A78BFA", // Light purple
+
+  // ─── Progress ─────────────────────────
+  progressTrack: "#262626",
+  progressFill: "#FFFFFF",
+  progressComplete: "#34D399",
+
+  error: "#EF4444",
+  errorBg: "rgba(239, 68, 68, 0.15)",
+
+  info: "#60A5FA",
+  infoBg: "rgba(96, 165, 250, 0.15)",
+
+  // ─── Interaction ──────────────────────
+  focus: "#FFFFFF",
+  overlay: "rgba(0, 0, 0, 0.70)",
 };
 
 export const globalStyles = StyleSheet.create({

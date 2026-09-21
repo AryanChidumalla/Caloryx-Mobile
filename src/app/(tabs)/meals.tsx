@@ -1,4 +1,4 @@
-import MealItemCard from "@/components/MealItemCard";
+import MealItemCard from "@/components/nutrition/MealItemCard";
 import { useNutrition } from "@/context/NutritionContext";
 import { colors, globalStyles } from "@/styles/global";
 import { DailyTotals, MealEntry } from "@/types/nutrition";
@@ -10,7 +10,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import {
   Alert,
   FlatList,
@@ -102,7 +102,7 @@ export default function AllMealsScreen() {
           <View>
             <Text style={styles.dayTitle}>{dateLabel}</Text>
             <Text style={styles.dayTotalsText}>
-              {item.totals.calories} kcal  •  {formatMacroString(item.totals)}
+              {item.totals.calories} kcal • {formatMacroString(item.totals)}
             </Text>
           </View>
 
@@ -112,11 +112,7 @@ export default function AllMealsScreen() {
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Text style={styles.jumpButtonText}>View Day</Text>
-            <Ionicons
-              name="chevron-forward"
-              size={12}
-              color={colors.text}
-            />
+            <Ionicons name="chevron-forward" size={12} color={colors.text} />
           </TouchableOpacity>
         </View>
 
@@ -169,14 +165,16 @@ export default function AllMealsScreen() {
           </View>
           <Text style={styles.emptyTitle}>No Meals Logged Yet</Text>
           <Text style={styles.emptySubtitle}>
-            When you log meals, your daily nutrition history and macro breakdowns
-            will appear here.
+            When you log meals, your daily nutrition history and macro
+            breakdowns will appear here.
           </Text>
           <TouchableOpacity
             style={styles.startLoggingButton}
             onPress={() => router.navigate("/(tabs)/add-meal")}
           >
-            <Text style={styles.startLoggingButtonText}>Log Your First Meal</Text>
+            <Text style={styles.startLoggingButtonText}>
+              Log Your First Meal
+            </Text>
           </TouchableOpacity>
         </View>
       ) : (

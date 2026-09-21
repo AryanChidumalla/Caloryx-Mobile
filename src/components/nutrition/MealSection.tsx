@@ -1,9 +1,7 @@
 import { colors } from "@/styles/global";
 import { DailyTotals, MealEntry, MealType } from "@/types/nutrition";
-import { formatMacroString } from "@/utils/nutritionCalculations";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import MealItemCard from "./MealItemCard";
 
@@ -40,8 +38,9 @@ export default function MealSection({
       <View style={styles.header}>
         <View style={styles.titleRow}>
           <View style={styles.iconBox}>
-            <Ionicons name={iconName} size={16} color={colors.primary} />
+            <Ionicons name={iconName} size={16} color={colors.accent} />
           </View>
+
           <Text style={styles.titleText}>{title}</Text>
         </View>
 
@@ -49,10 +48,12 @@ export default function MealSection({
           {hasMeals && (
             <Text style={styles.headerCalories}>{totals.calories} kcal</Text>
           )}
+
           <TouchableOpacity
             style={styles.addButton}
             onPress={handleAdd}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            activeOpacity={0.75}
           >
             <Ionicons name="add" size={16} color={colors.primary} />
             <Text style={styles.addButtonText}>Add</Text>
@@ -60,13 +61,15 @@ export default function MealSection({
         </View>
       </View>
 
+      <View style={styles.divider} />
+
       {hasMeals ? (
         <View style={styles.mealsContainer}>
-          <View style={styles.macroSummaryRow}>
+          {/* <View style={styles.macroSummaryRow}>
             <Text style={styles.macroSummaryText}>
               {formatMacroString(totals)}
             </Text>
-          </View>
+          </View> */}
 
           {meals.map((meal) => (
             <MealItemCard
@@ -86,16 +89,16 @@ export default function MealSection({
           <Text style={styles.emptyText}>
             No {title.toLowerCase()} logged yet
           </Text>
-          <View style={styles.emptyAddPrompt}>
-            <Ionicons
-              name="add-circle-outline"
-              size={14}
-              color={colors.primary}
-            />
-            <Text style={styles.emptyPromptText}>Log Food</Text>
-          </View>
         </TouchableOpacity>
       )}
+
+      {/* <TouchableOpacity
+        style={styles.emptyContainer}
+        onPress={handleAdd}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.emptyText}>Add</Text>
+      </TouchableOpacity> */}
     </View>
   );
 }
@@ -109,93 +112,120 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 14,
   },
+
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
+
   titleRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 9,
   },
+
   iconBox: {
-    width: 30,
-    height: 30,
-    borderRadius: 9,
-    backgroundColor: colors.primaryMuted,
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: colors.accentMuted,
     justifyContent: "center",
     alignItems: "center",
   },
+
   titleText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "700",
     color: colors.text,
     letterSpacing: -0.2,
   },
+
   headerRight: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: 9,
   },
+
   headerCalories: {
     fontSize: 14,
-    fontWeight: "700",
-    color: colors.calories,
+    fontWeight: "600",
+    color: colors.textSecondary,
   },
+
   addButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 2,
-    backgroundColor: colors.primaryMuted,
+    gap: 3,
+    backgroundColor: colors.surfaceLight,
     paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
   },
+
   addButtonText: {
     fontSize: 12,
     fontWeight: "700",
     color: colors.primary,
   },
-  mealsContainer: {
-    marginTop: 10,
-  },
+
   macroSummaryRow: {
-    marginBottom: 8,
-    paddingBottom: 6,
+    marginBottom: 9,
+    paddingBottom: 8,
     borderBottomWidth: 1,
-    borderBottomColor: colors.surfaceLight,
+    borderBottomColor: colors.surfaceBorder,
   },
+
   macroSummaryText: {
     fontSize: 12,
     color: colors.textSecondary,
-    fontWeight: "500",
+    fontWeight: "600",
   },
+
+  // divider
+  divider: {
+    height: 1,
+    marginTop: 12,
+    marginBottom: 12,
+    // width: 1,
+    backgroundColor: colors.surfaceBorder,
+    // marginHorizontal: 10,
+  },
+
+  mealsContainer: {
+    // marginTop: 12,
+    gap: 12,
+  },
+
   emptyContainer: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "space-around",
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.02)",
+    backgroundColor: colors.surfaceLight,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    borderStyle: "dashed",
-    borderRadius: 12,
+    borderStyle: "solid",
+    borderRadius: 8,
     paddingVertical: 12,
     paddingHorizontal: 14,
-    marginTop: 10,
+    // marginTop: 10,
   },
+
   emptyText: {
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textMuted,
+    // justifyContent: "center",
   },
+
   emptyAddPrompt: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
   },
+
   emptyPromptText: {
     fontSize: 12,
-    fontWeight: "600",
+    fontWeight: "700",
     color: colors.primary,
   },
 });
