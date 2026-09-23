@@ -1,9 +1,12 @@
+import { useWorkout } from "@/context/WorkoutContext";
 import { colors } from "@/styles/global";
 import { ExerciseSet, SessionExercise } from "@/types/workout";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
   Alert,
+  Image,
   StyleSheet,
   Text,
   TextInput,
@@ -11,6 +14,9 @@ import {
   View,
 } from "react-native";
 import SetRow from "./SetRow";
+
+const GITHUB_BASE_URL =
+  "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/";
 
 type ExerciseCardProps = {
   exercise: SessionExercise;
@@ -41,7 +47,29 @@ export default function ExerciseCard({
   onMoveDown,
   onUpdateNotes,
 }: ExerciseCardProps) {
+  const router = useRouter();
+  const { exercises } = useWorkout();
+
   const [showNotes, setShowNotes] = useState(Boolean(exercise.notes));
+
+  const exerciseInfo = exercise.exerciseId
+    ? exercises.find((ex) => ex.id === exercise.exerciseId)
+    : undefined;
+
+  const isTimed =
+    exercise.category === "cardio" ||
+    exercise.exerciseName.toLowerCase().includes("plank");
+
+  const handleOpenDetails = () => {
+    if (!exercise.exerciseId) return;
+
+    router.push({
+      pathname: "/exercise/[id]",
+      params: {
+        id: exercise.exerciseId,
+      },
+    });
+  };
 
   const handleConfirmRemove = () => {
     Alert.alert(
@@ -49,33 +77,56 @@ export default function ExerciseCard({
       `Remove "${exercise.exerciseName}" from this workout?`,
       [
         { text: "Cancel", style: "cancel" },
-        { text: "Remove", style: "destructive", onPress: onRemoveExercise },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: onRemoveExercise,
+        },
       ],
     );
   };
 
-  const isTimed =
-    exercise.category === "cardio" ||
-    exercise.exerciseName.toLowerCase().includes("plank");
-
-  console.log(exercise);
   return (
     <View style={styles.card}>
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.titleContainer}>
-          <Text style={styles.exerciseName} numberOfLines={1}>
-            {exercise.exerciseName
-              .toLowerCase()
-              .replace(/\b\w/g, (char) => char.toUpperCase())}
-          </Text>
-
-          {exercise.category && (
-            <View style={styles.categoryBadge}>
-              <Text style={styles.categoryText}>{exercise.category}</Text>
+        <TouchableOpacity
+          style={styles.titleContainer}
+          onPress={handleOpenDetails}
+          activeOpacity={0.7}
+          disabled={!exercise.exerciseId}
+        >
+          {exerciseInfo?.image ? (
+            <Image
+              source={{
+                uri: `${GITHUB_BASE_URL}${exerciseInfo.image}`,
+              }}
+              style={styles.exerciseImage}
+            />
+          ) : (
+            <View style={styles.exerciseImagePlaceholder}>
+              <Ionicons
+                name="barbell-outline"
+                size={20}
+                color={colors.textMuted}
+              />
             </View>
           )}
-        </View>
+
+          <View style={styles.titleText}>
+            <Text style={styles.exerciseName} numberOfLines={2}>
+              {exercise.exerciseName
+                .toLowerCase()
+                .replace(/\b\w/g, (char) => char.toUpperCase())}
+            </Text>
+
+            {exercise.category && (
+              <View style={styles.categoryBadge}>
+                <Text style={styles.categoryText}>{exercise.category}</Text>
+              </View>
+            )}
+          </View>
+        </TouchableOpacity>
 
         {/* Action Controls */}
         <View style={styles.headerActions}>
@@ -121,7 +172,7 @@ export default function ExerciseCard({
 
           <TouchableOpacity
             style={styles.iconBtn}
-            onPress={() => setShowNotes((p) => !p)}
+            onPress={() => setShowNotes((prev) => !prev)}
             hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
           >
             <Ionicons
@@ -141,7 +192,7 @@ export default function ExerciseCard({
         </View>
       </View>
 
-      {/* Notes Row */}
+      {/* Notes */}
       {showNotes && (
         <View style={styles.notesContainer}>
           <TextInput
@@ -158,19 +209,23 @@ export default function ExerciseCard({
       {/* Table Headers */}
       <View style={styles.tableHeader}>
         <Text style={[styles.headerCol, { width: 34 }]}>SET</Text>
+
         <Text style={[styles.headerCol, { flex: 1, textAlign: "center" }]}>
           WEIGHT
         </Text>
+
         <Text style={[styles.headerCol, { flex: 1, textAlign: "center" }]}>
           {isTimed ? "TIME" : "REPS"}
         </Text>
+
         <Text style={[styles.headerCol, { width: 32, textAlign: "center" }]}>
           DONE
         </Text>
+
         <View style={{ width: 24 }} />
       </View>
 
-      {/* Sets List */}
+      {/* Sets */}
       <View style={styles.setsList}>
         {exercise.sets.map((set, sIdx) => (
           <SetRow
@@ -184,7 +239,7 @@ export default function ExerciseCard({
         ))}
       </View>
 
-      {/* Add Set Button */}
+      {/* Add Set */}
       <TouchableOpacity
         style={styles.addSetButton}
         onPress={onAddSet}
@@ -199,36 +254,50 @@ export default function ExerciseCard({
 
 const styles = StyleSheet.create({
   card: {
-    // backgroundColor: colors.surface,
-    // borderRadius: 18,
-    // borderWidth: 1,
-    // borderColor: colors.surfaceBorder,
-    // padding: 14,
     marginBottom: 14,
   },
-  // card: {
-  //   backgroundColor: colors.surface,
-  //   borderRadius: 18,
-  //   borderWidth: 1,
-  //   borderColor: colors.surfaceBorder,
-  //   padding: 14,
-  //   marginBottom: 14,
-  // },
+
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 12,
   },
+
   titleContainer: {
     flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
     marginRight: 8,
   },
+
+  exerciseImage: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: colors.surfaceLight,
+  },
+
+  exerciseImagePlaceholder: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: colors.surfaceLight,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  titleText: {
+    flex: 1,
+  },
+
   exerciseName: {
     fontSize: 16,
     fontWeight: "800",
     color: colors.text,
   },
+
   categoryBadge: {
     alignSelf: "flex-start",
     backgroundColor: colors.surfaceLight,
@@ -237,17 +306,20 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     marginTop: 4,
   },
+
   categoryText: {
     fontSize: 10,
     fontWeight: "700",
     color: colors.textSecondary,
     textTransform: "uppercase",
   },
+
   headerActions: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
   },
+
   iconBtn: {
     width: 30,
     height: 30,
@@ -256,17 +328,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+
   notesContainer: {
     backgroundColor: colors.surfaceLight,
     borderRadius: 10,
     padding: 8,
     marginBottom: 12,
   },
+
   notesInput: {
     fontSize: 12,
     color: colors.text,
     minHeight: 28,
   },
+
   tableHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -274,15 +349,18 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     gap: 8,
   },
+
   headerCol: {
     fontSize: 10,
     fontWeight: "800",
     color: colors.textSecondary,
     letterSpacing: 0.5,
   },
+
   setsList: {
     marginBottom: 8,
   },
+
   addSetButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -294,6 +372,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 10,
   },
+
   addSetText: {
     fontSize: 13,
     fontWeight: "700",

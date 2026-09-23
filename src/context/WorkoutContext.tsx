@@ -100,6 +100,9 @@ type WorkoutContextType = {
   getWorkoutForDate: (dateStr: string) => WorkoutSession | null;
   createCustomExercise: (exercise: Omit<Exercise, "id">) => Promise<Exercise>;
   refreshWorkouts: () => Promise<void>;
+
+  selectedRoutineExercise: Exercise | null;
+  setSelectedRoutineExercise: (exercise: Exercise | null) => void;
 };
 
 const WorkoutContext = createContext<WorkoutContextType | undefined>(undefined);
@@ -120,6 +123,8 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);
   const [exercises, setExercises] = useState<Exercise[]>(getExercises());
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedRoutineExercise, setSelectedRoutineExercise] =
+    useState<Exercise | null>(null);
 
   // Active workout state
   const [activeWorkout, setActiveWorkout] = useState<WorkoutSession | null>(
@@ -209,7 +214,9 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         const raw = s.startedAt || s.completedAt;
         if (!raw) return false;
         const d = new Date(raw);
-        const date = !isNaN(d.getTime()) ? formatLocalDate(d) : raw.substring(0, 10);
+        const date = !isNaN(d.getTime())
+          ? formatLocalDate(d)
+          : raw.substring(0, 10);
         return date === todayStr;
       }) || null
     );
@@ -424,7 +431,9 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
           const raw = s.startedAt || s.completedAt;
           if (!raw) return false;
           const d = new Date(raw);
-          const date = !isNaN(d.getTime()) ? formatLocalDate(d) : raw.substring(0, 10);
+          const date = !isNaN(d.getTime())
+            ? formatLocalDate(d)
+            : raw.substring(0, 10);
           return date === dateStr;
         }) || null
       );
@@ -502,6 +511,8 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
       deleteSession,
       createCustomExercise,
       refreshWorkouts,
+      selectedRoutineExercise,
+      setSelectedRoutineExercise,
     }),
     [
       routines,
@@ -535,6 +546,8 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
       deleteSession,
       createCustomExercise,
       refreshWorkouts,
+      selectedRoutineExercise,
+      setSelectedRoutineExercise,
     ],
   );
 

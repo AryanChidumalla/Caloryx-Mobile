@@ -8,6 +8,7 @@ import { WorkoutRoutine, WorkoutSession } from "@/types/workout";
 import { formatWorkoutTimer } from "@/utils/workoutCalculations";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import {
   ScrollView,
@@ -22,6 +23,7 @@ type ActiveTab = "routines" | "history" | "exercises";
 
 export default function WorkoutScreen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const {
     routines,
     activeWorkout,
@@ -42,14 +44,23 @@ export default function WorkoutScreen() {
   const [routineSearch] = useState("");
   const [routineCategory] = useState("all");
 
+  // const handleStartRoutine = (routine: WorkoutRoutine) => {
+  //   startRoutine(routine);
+  //   setActiveModalVisible(true);
+  // };
   const handleStartRoutine = (routine: WorkoutRoutine) => {
     startRoutine(routine);
-    setActiveModalVisible(true);
+    router.push("/workout/active");
   };
+
+  // const handleStartBlank = () => {
+  //   startEmptyWorkout("Quick Workout");
+  //   setActiveModalVisible(true);
+  // };
 
   const handleStartBlank = () => {
     startEmptyWorkout("Quick Workout");
-    setActiveModalVisible(true);
+    router.push("/workout/active");
   };
 
   // Filtered routines
@@ -97,9 +108,13 @@ export default function WorkoutScreen() {
         {activeWorkout ? (
           <TouchableOpacity
             style={styles.activeBanner}
+            // onPress={() => {
+            //   Haptics.selectionAsync();
+            //   setActiveModalVisible(true);
+            // }}
             onPress={() => {
               Haptics.selectionAsync();
-              setActiveModalVisible(true);
+              router.push("/workout/active");
             }}
             activeOpacity={0.8}
           >
@@ -146,7 +161,8 @@ export default function WorkoutScreen() {
 
         <TouchableOpacity
           style={styles.newRoutineBtn}
-          onPress={() => setCreateRoutineVisible(true)}
+          // onPress={() => setCreateRoutineVisible(true)}
+          onPress={() => router.push("/workout/routines/create")}
           activeOpacity={0.7}
         >
           <Ionicons name="add" size={16} color={colors.text} />
