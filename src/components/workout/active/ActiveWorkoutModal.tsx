@@ -244,7 +244,7 @@ export default function ActiveWorkoutModal({
             }}
             activeOpacity={0.7}
           >
-            <Ionicons name="add" size={18} color={colors.primary} />
+            <Ionicons name="add" size={18} color={colors.text} />
             <Text style={styles.addExerciseText}>Add Exercise</Text>
           </TouchableOpacity>
         </ScrollView>
@@ -290,12 +290,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.surfaceBorder,
+    backgroundColor: colors.surfaceLight,
+    // borderWidth: 1,
+    // borderColor: colors.surfaceBorder,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 12,
+    borderRadius: 8,
   },
   pauseToggle: {
     width: 22,
@@ -317,12 +317,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 10,
+    borderRadius: 8,
   },
   finishText: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: colors.background,
+    fontSize: 16,
+    // fontWeight: "800",
+    color: colors.text,
   },
   buttonDisabled: {
     opacity: 0.5,
@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
   minimizeBtn: {
     width: 32,
     height: 32,
-    borderRadius: 10,
+    borderRadius: 8,
     backgroundColor: colors.surfaceLight,
     justifyContent: "center",
     alignItems: "center",
@@ -363,11 +363,11 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   emptyCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 18,
-    borderWidth: 1,
+    // backgroundColor: colors.surface,
+    // borderRadius: 8,
+    // borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    borderStyle: "dashed",
+    // borderStyle: "dashed",
     padding: 32,
     alignItems: "center",
     gap: 10,
@@ -388,16 +388,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.surfaceBorder,
+    backgroundColor: colors.accent,
+    // borderWidth: 1,
+    // borderColor: colors.surfaceBorder,
     paddingVertical: 14,
-    borderRadius: 14,
+    borderRadius: 8,
     marginTop: 4,
   },
   addExerciseText: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: colors.primary,
+    fontSize: 16,
+    // fontWeight: "800",
+    color: colors.text,
   },
 });

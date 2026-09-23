@@ -58,6 +58,7 @@ export default function ExerciseCard({
     exercise.category === "cardio" ||
     exercise.exerciseName.toLowerCase().includes("plank");
 
+  console.log(exercise);
   return (
     <View style={styles.card}>
       {/* Header */}
@@ -198,13 +199,21 @@ export default function ExerciseCard({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.surface,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: colors.surfaceBorder,
-    padding: 14,
+    // backgroundColor: colors.surface,
+    // borderRadius: 18,
+    // borderWidth: 1,
+    // borderColor: colors.surfaceBorder,
+    // padding: 14,
     marginBottom: 14,
   },
+  // card: {
+  //   backgroundColor: colors.surface,
+  //   borderRadius: 18,
+  //   borderWidth: 1,
+  //   borderColor: colors.surfaceBorder,
+  //   padding: 14,
+  //   marginBottom: 14,
+  // },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",

@@ -9,7 +9,6 @@ import {
   FlatList,
   Image,
   Modal,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -88,6 +87,7 @@ export default function ExerciseSelectorModal({
 
   const handleOpenDetails = (ex: Exercise) => {
     Haptics.selectionAsync();
+    // onClose();
     router.push({
       pathname: "/exercise/[id]",
       params: {
@@ -110,12 +110,12 @@ export default function ExerciseSelectorModal({
   };
 
   const renderExerciseItem = ({ item }: { item: Exercise }) => (
-    <TouchableOpacity
-      style={styles.exerciseItem}
-      onPress={() => handleSelect(item)}
-      activeOpacity={0.7}
-    >
-      <View style={styles.exerciseLeft}>
+    <View style={styles.exerciseItem}>
+      <TouchableOpacity
+        style={styles.exerciseLeft}
+        onPress={() => handleSelect(item)}
+        activeOpacity={0.7}
+      >
         {item.image ? (
           <Image
             source={{
@@ -140,8 +140,10 @@ export default function ExerciseSelectorModal({
               .toLowerCase()
               .replace(/\b\w/g, (char) => char.toUpperCase())}
           </Text>
+
           <View style={styles.itemMeta}>
             <Text style={styles.itemCategory}>{item.category}</Text>
+
             {item.equipment && (
               <>
                 <Text style={styles.dot}>•</Text>
@@ -150,30 +152,20 @@ export default function ExerciseSelectorModal({
             )}
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
 
-      <View style={styles.itemActions}>
-        <TouchableOpacity
-          onPress={() => handleOpenDetails(item)}
-          style={styles.infoBtn}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Ionicons
-            name="information-circle-outline"
-            size={20}
-            color={colors.textSecondary}
-          />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => handleSelect(item)}
-          style={styles.addIconBtn}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Ionicons name="add-circle" size={26} color={colors.primary} />
-        </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
+      <TouchableOpacity
+        onPress={() => handleOpenDetails(item)}
+        style={styles.infoBtn}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <Ionicons
+          name="information-circle-outline"
+          size={20}
+          color={colors.textSecondary}
+        />
+      </TouchableOpacity>
+    </View>
   );
 
   return (
@@ -219,7 +211,7 @@ export default function ExerciseSelectorModal({
 
         {/* Muscle Category Filters */}
         <View style={styles.filtersSection}>
-          <ScrollView
+          {/* <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.chipsScroll}
@@ -243,10 +235,10 @@ export default function ExerciseSelectorModal({
                 </TouchableOpacity>
               );
             })}
-          </ScrollView>
+          </ScrollView> */}
 
           {/* Equipment Filter Chips */}
-          <ScrollView
+          {/* <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={[styles.chipsScroll, { marginTop: 6 }]}
@@ -273,11 +265,11 @@ export default function ExerciseSelectorModal({
                 </TouchableOpacity>
               );
             })}
-          </ScrollView>
+          </ScrollView> */}
         </View>
 
         {/* Custom Exercise Creator Form */}
-        {isCreatingCustom ? (
+        {/* {isCreatingCustom ? (
           <View style={styles.customBox}>
             <Text style={styles.customBoxTitle}>Create Custom Exercise</Text>
             <TextInput
@@ -338,7 +330,7 @@ export default function ExerciseSelectorModal({
             <Ionicons name="add" size={16} color={colors.primary} />
             <Text style={styles.createPromptText}>Create Custom Exercise</Text>
           </TouchableOpacity>
-        )}
+        )} */}
 
         {/* Exercise List */}
         <FlatList
@@ -391,10 +383,10 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.surfaceBorder,
-    borderRadius: 12,
+    backgroundColor: colors.surfaceLight,
+    // borderWidth: 1,
+    // borderColor: colors.surfaceBorder,
+    borderRadius: 9,
     marginHorizontal: 16,
     marginTop: 12,
     paddingHorizontal: 12,
@@ -462,14 +454,14 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 4,
     paddingVertical: 9,
-    borderRadius: 10,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.surfaceBorder,
+    borderRadius: 8,
+    backgroundColor: colors.surfaceLight,
+    // borderWidth: 1,
+    // borderColor: colors.surfaceBorder,
   },
   createPromptText: {
-    fontSize: 13,
-    fontWeight: "700",
+    fontSize: 14,
+    // fontWeight: "700",
     color: colors.primary,
   },
   customBox: {
@@ -529,11 +521,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: colors.surface,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.surfaceBorder,
-    padding: 12,
+    // backgroundColor: colors.surface,
+    borderRadius: 8,
+    // borderWidth: 1,
+    // borderColor: colors.surfaceBorder,
+    // padding: 12,
+    paddingVertical: 12,
   },
   exerciseLeft: {
     flexDirection: "row",
@@ -542,15 +535,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   exerciseImage: {
-    width: 44,
-    height: 44,
-    borderRadius: 8,
+    width: 60,
+    height: 60,
+    borderRadius: 100,
     backgroundColor: colors.surfaceLight,
   },
   exerciseImagePlaceholder: {
-    width: 44,
-    height: 44,
-    borderRadius: 8,
+    width: 60,
+    height: 60,
+    borderRadius: 100,
     backgroundColor: colors.surfaceLight,
     justifyContent: "center",
     alignItems: "center",
@@ -559,8 +552,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   itemName: {
-    fontSize: 14,
-    fontWeight: "700",
+    fontSize: 16,
+    // fontWeight: "700",
     color: colors.text,
   },
   itemMeta: {

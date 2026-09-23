@@ -2,7 +2,6 @@ import { colors } from "@/styles/global";
 import { ExerciseSet, SetType } from "@/types/workout";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import React from "react";
 import {
   StyleSheet,
   Text,
@@ -151,10 +150,10 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 6,
-    paddingHorizontal: 10,
+    // paddingVertical: 6,
+    // paddingHorizontal: 10,
     borderRadius: 10,
-    backgroundColor: colors.surfaceLight,
+    // backgroundColor: colors.surfaceLight,
     marginBottom: 6,
     gap: 8,
   },
@@ -162,8 +161,8 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(52, 211, 153, 0.08)",
   },
   setTypeBadge: {
-    width: 28,
-    height: 28,
+    width: 36,
+    height: 36,
     borderRadius: 8,
     backgroundColor: colors.surfaceBorder,
     justifyContent: "center",

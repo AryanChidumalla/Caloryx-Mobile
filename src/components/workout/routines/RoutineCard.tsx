@@ -2,7 +2,6 @@ import { colors } from "@/styles/global";
 import { WorkoutRoutine } from "@/types/workout";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import React from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 type RoutineCardProps = {
@@ -67,7 +66,11 @@ export default function RoutineCard({
 
       {/* Exercises preview */}
       <View style={styles.previewContainer}>
-        <Ionicons name="barbell-outline" size={14} color={colors.textSecondary} />
+        <Ionicons
+          name="barbell-outline"
+          size={14}
+          color={colors.textSecondary}
+        />
         <Text style={styles.previewText} numberOfLines={1}>
           {previewExercises || "No exercises added yet"}
           {routine.exercises.length > 3 ? "..." : ""}
@@ -76,19 +79,19 @@ export default function RoutineCard({
 
       {/* Footer / Start button */}
       <View style={styles.footer}>
-        <View style={styles.statsBadge}>
+        {/* <View style={styles.statsBadge}>
           <Text style={styles.statsText}>
             {routine.exercises.length}{" "}
             {routine.exercises.length === 1 ? "exercise" : "exercises"}
           </Text>
-        </View>
+        </View> */}
 
         <TouchableOpacity
           style={styles.startButton}
           onPress={handleStart}
           activeOpacity={0.7}
         >
-          <Ionicons name="play" size={14} color="#0A0A0A" />
+          <Ionicons name="play" size={14} color={colors.text} />
           <Text style={styles.startButtonText}>Start Workout</Text>
         </TouchableOpacity>
       </View>
@@ -98,10 +101,10 @@ export default function RoutineCard({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.surface,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: colors.surfaceBorder,
+    backgroundColor: colors.surfaceLight,
+    borderRadius: 8,
+    // borderWidth: 1,
+    // borderColor: colors.surfaceBorder,
     padding: 16,
     marginBottom: 12,
   },
@@ -115,8 +118,8 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   routineName: {
-    fontSize: 17,
-    fontWeight: "800",
+    fontSize: 16,
+    fontWeight: "600",
     color: colors.text,
   },
   description: {
@@ -162,11 +165,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     paddingHorizontal: 16,
     paddingVertical: 9,
-    borderRadius: 12,
+    borderRadius: 8,
   },
   startButtonText: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: colors.background,
+    fontSize: 12,
+    fontWeight: "600",
+    color: colors.text,
   },
 });

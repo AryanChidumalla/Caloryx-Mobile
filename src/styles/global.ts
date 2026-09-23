@@ -8,9 +8,12 @@ export const colors = {
   surfaceBorder: "#262626", // Subtle clean border
   card: "#141414",
 
-  primary: "#FFFFFF", // High contrast crisp white
-  primaryDark: "#E5E5E5",
-  primaryMuted: "rgba(255, 255, 255, 0.08)",
+  // primary: "#FFFFFF", // High contrast crisp white
+  // primaryDark: "#E5E5E5",
+  // primaryMuted: "rgba(255, 255, 255, 0.08)",
+  primary: "#3B82F6", // High contrast crisp white
+  primaryDark: "#2563EB",
+  primaryMuted: "rgba(59, 130, 246, 0.12)",
 
   // Macro-specific color tokens (restrained & clean)
   calories: "#FFFFFF",
