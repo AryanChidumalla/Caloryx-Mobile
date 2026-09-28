@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useWorkout } from "@/context/WorkoutContext";
 import { colors } from "@/styles/global";
@@ -38,7 +39,7 @@ export default function ExerciseDetailsScreen() {
     (exercise.image ? `${GITHUB_BASE_URL}${exercise.image}` : null);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -70,7 +71,7 @@ export default function ExerciseDetailsScreen() {
         <Text style={styles.exerciseName}>{exercise.name}</Text>
 
         {/* Basic info */}
-        <View style={styles.infoRow}>
+        {/* <View style={styles.infoRow}>
           <View style={styles.infoCard}>
             <Text style={styles.infoLabel}>Target</Text>
             <Text style={styles.infoValue}>{exercise.target || "—"}</Text>
@@ -80,11 +81,12 @@ export default function ExerciseDetailsScreen() {
             <Text style={styles.infoLabel}>Equipment</Text>
             <Text style={styles.infoValue}>{exercise.equipment || "—"}</Text>
           </View>
-        </View>
+        </View> */}
 
         {/* Muscle information */}
+        {/* Information */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Muscles</Text>
+          {/* <Text style={styles.sectionTitle}>Muscles</Text> */}
 
           {/* <View style={styles.muscleRow}>
             <Text style={styles.muscleLabel}>Primary</Text>
@@ -92,6 +94,11 @@ export default function ExerciseDetailsScreen() {
               {exercise.muscleGroup || "—"}
             </Text>
           </View> */}
+
+          <View style={styles.muscleRow}>
+            <Text style={styles.muscleLabel}>Target</Text>
+            <Text style={styles.muscleValue}>{exercise.target || "-"}</Text>
+          </View>
 
           {Boolean(
             exercise.secondaryMuscles && exercise.secondaryMuscles.length > 0,
@@ -103,6 +110,11 @@ export default function ExerciseDetailsScreen() {
               </Text>
             </View>
           )}
+
+          <View style={styles.muscleRow}>
+            <Text style={styles.muscleLabel}>Equipment</Text>
+            <Text style={styles.muscleValue}>{exercise.equipment || "-"}</Text>
+          </View>
         </View>
 
         {/* Video or Image */}
@@ -126,7 +138,7 @@ export default function ExerciseDetailsScreen() {
             exercise.instructionSteps.map((step: string, index: number) => (
               <View key={index} style={styles.stepRow}>
                 <View style={styles.stepNumber}>
-                  <Text style={styles.stepNumberText}>{index + 1}</Text>
+                  <Text style={styles.stepNumberText}>{index + 1}.</Text>
                 </View>
 
                 <Text style={styles.stepText}>{step}</Text>
@@ -144,7 +156,7 @@ export default function ExerciseDetailsScreen() {
           <Text style={styles.attribution}>{exercise.attribution}</Text>
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -280,25 +292,25 @@ const styles = StyleSheet.create({
   },
 
   stepNumber: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: colors.primary,
-    justifyContent: "center",
+    // width: 28,
+    // height: 28,
+    // borderRadius: 8,
+    // backgroundColor: colors.primary,
+    // justifyContent: "center",
     alignItems: "center",
     marginRight: 10,
   },
 
   stepNumberText: {
-    color: colors.background,
-    fontSize: 12,
+    color: colors.text,
+    fontSize: 16,
     fontWeight: "800",
   },
 
   stepText: {
     flex: 1,
-    color: colors.textSecondary,
-    fontSize: 14,
+    color: colors.text,
+    fontSize: 16,
     lineHeight: 21,
   },
 

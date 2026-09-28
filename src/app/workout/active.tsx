@@ -8,6 +8,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -39,11 +40,14 @@ export default function ActiveWorkoutScreen() {
     removeSetFromExercise,
     updateSet,
     toggleSetCompleted,
+    updateActiveWorkoutName,
   } = useWorkout();
 
   const [isFinishing, setIsFinishing] = useState(false);
   const [selectorVisible, setSelectorVisible] = useState(false);
   const [replacingIndex, setReplacingIndex] = useState<number | null>(null);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [workoutTitle, setWorkoutTitle] = useState(activeWorkout?.name ?? "");
 
   if (!activeWorkout) {
     return null;
@@ -119,7 +123,37 @@ export default function ActiveWorkoutScreen() {
         </TouchableOpacity>
 
         <View style={styles.headerCenter}>
-          <Text style={styles.workoutTitle}>{activeWorkout.name}</Text>
+          {isEditingTitle ? (
+            <TextInput
+              style={styles.titleInput}
+              value={workoutTitle}
+              onChangeText={setWorkoutTitle}
+              autoFocus
+              onBlur={() => {
+                setIsEditingTitle(false);
+                if (workoutTitle.trim()) {
+                  updateActiveWorkoutName(workoutTitle.trim());
+                } else {
+                  setWorkoutTitle(activeWorkout.name); // Revert if empty
+                }
+              }}
+              onSubmitEditing={() => {
+                setIsEditingTitle(false);
+                if (workoutTitle.trim()) {
+                  updateActiveWorkoutName(workoutTitle.trim());
+                }
+              }}
+            />
+          ) : (
+            <TouchableOpacity
+              onPress={() => {
+                setWorkoutTitle(activeWorkout.name);
+                setIsEditingTitle(true);
+              }}
+            >
+              <Text style={styles.workoutTitle}>{activeWorkout.name}</Text>
+            </TouchableOpacity>
+          )}
 
           <Text style={styles.timer}>
             {formatWorkoutTimer(activeDurationSeconds)}
@@ -212,11 +246,7 @@ export default function ActiveWorkoutScreen() {
             router.push("/workout/selector");
           }}
         >
-          <Ionicons
-            name="add-circle-outline"
-            size={22}
-            color={colors.primary}
-          />
+          <Ionicons name="add-circle-outline" size={22} color={colors.text} />
 
           <Text style={styles.addExerciseText}>Add Exercise</Text>
         </TouchableOpacity>
@@ -262,6 +292,17 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "700",
+  },
+
+  titleInput: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+    borderBottomWidth: 1,
+    borderBottomColor: colors.primary,
+    textAlign: "center",
+    paddingVertical: 2,
+    minWidth: 120,
   },
 
   timer: {
@@ -325,17 +366,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    paddingVertical: 16,
+    paddingVertical: 8,
     marginTop: 8,
     borderWidth: 1,
-    borderColor: colors.primary,
-    borderRadius: 10,
+    backgroundColor: colors.primary,
+    // borderColor: colors.primary,
+    borderRadius: 8,
   },
 
   addExerciseText: {
-    color: colors.primary,
-    fontSize: 15,
-    fontWeight: "700",
+    color: colors.text,
+    fontSize: 16,
+    // fontWeight: "700",
   },
 
   bottomSpacing: {

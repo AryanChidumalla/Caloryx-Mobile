@@ -86,6 +86,7 @@ type WorkoutContextType = {
     updates: Partial<ExerciseSet>,
   ) => void;
   toggleSetCompleted: (exerciseIndex: number, setIndex: number) => void;
+  updateActiveWorkoutName: (name: string) => void;
 
   // Routine Management
   createRoutine: (
@@ -386,6 +387,16 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
+  const updateActiveWorkoutName = useCallback((name: string) => {
+    setActiveWorkout((current) => {
+      if (!current) return current;
+      return {
+        ...current,
+        name,
+      };
+    });
+  }, []);
+
   // ---------------------------------------------------------------------------
   // Routine Management
   // ---------------------------------------------------------------------------
@@ -504,6 +515,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
       removeSetFromExercise,
       updateSet,
       toggleSetCompleted,
+      updateActiveWorkoutName,
       createRoutine,
       editRoutine,
       deleteRoutine,
@@ -539,6 +551,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
       removeSetFromExercise,
       updateSet,
       toggleSetCompleted,
+      updateActiveWorkoutName,
       createRoutine,
       editRoutine,
       deleteRoutine,
