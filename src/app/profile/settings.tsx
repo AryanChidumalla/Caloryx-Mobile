@@ -308,7 +308,7 @@ export default function SettingsScreen() {
 
             <View style={styles.guestNoticeContent}>
               <Text style={styles.guestNoticeTitle}>
-                You're using Guest Mode
+                {"You're using Guest Mode"}
               </Text>
 
               <Text style={styles.guestNoticeDescription}>

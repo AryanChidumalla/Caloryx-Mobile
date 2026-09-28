@@ -1,16 +1,20 @@
 import { useAuth } from "@/context/AuthContext";
+import { useHealth } from "@/context/HealthContext";
 import { useNutrition } from "@/context/NutritionContext";
-import { getGuestProfile, saveGuestProfile } from "@/storage/nutritionStorage";
+import { getGuestProfile } from "@/storage/nutritionStorage";
 import { colors, globalStyles } from "@/styles/global";
 import { ActivityLevel, PrimaryGoal, Sex } from "@/types/nutrition";
 import {
+  ACTIVITY_OPTIONS,
   calculateBMR,
   calculateMacroTargetsFromCalories,
   calculateTargetCalories,
   calculateTDEE,
+  GOAL_OPTIONS,
   sanitizeNumber,
+  SEX_OPTIONS,
+  validateBodyStats,
 } from "@/utils/nutritionCalculations";
-import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -28,57 +32,11 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const SEX_OPTIONS: { value: Sex; label: string }[] = [
-  { value: "male", label: "Male" },
-  { value: "female", label: "Female" },
-];
-
-const ACTIVITY_OPTIONS: {
-  value: ActivityLevel;
-  label: string;
-  desc: string;
-  multiplier: number;
-}[] = [
-  {
-    value: "sedentary",
-    label: "Sedentary",
-    desc: "Little to no exercise, desk job",
-    multiplier: 1.2,
-  },
-  {
-    value: "light",
-    label: "Lightly Active",
-    desc: "Light exercise 1–3 days/week",
-    multiplier: 1.375,
-  },
-  {
-    value: "moderate",
-    label: "Moderate",
-    desc: "Moderate exercise 3–5 days/week",
-    multiplier: 1.55,
-  },
-  {
-    value: "heavy",
-    label: "Very Active",
-    desc: "Hard exercise 6–7 days/week",
-    multiplier: 1.725,
-  },
-];
-
-const GOAL_OPTIONS: {
-  value: PrimaryGoal;
-  label: string;
-  desc: string;
-}[] = [
-  { value: "lose_fat", label: "Lose Fat", desc: "Calorie Deficit" },
-  { value: "maintain", label: "Maintain Weight", desc: "Exact TDEE" },
-  { value: "build_muscle", label: "Build Muscle", desc: "Calorie Surplus" },
-];
-
 export default function ProfileSetupScreen() {
   const insets = useSafeAreaInsets();
   const { mode, user, profile, hasCompletedProfile, saveProfile } = useAuth();
   const { updateDailyGoals } = useNutrition();
+  const { recordWeight } = useHealth();
 
   const isGuest = mode === "guest";
   const canGoBack = hasCompletedProfile || isGuest;
@@ -147,43 +105,26 @@ export default function ProfileSetupScreen() {
   };
 
   const handleSave = async () => {
-    if (numWeight <= 20 || numHeight <= 50 || numAge <= 10) {
-      Alert.alert(
-        "Invalid Information",
-        "Please enter valid body stats (age, height, weight).",
-      );
+    const validation = validateBodyStats(numWeight, numHeight, numAge);
+    if (!validation.valid) {
+      Alert.alert("Invalid Information", validation.error);
       return;
     }
 
     setIsSaving(true);
     try {
-      if (isGuest) {
-        // Guest mode: Save locally
-        await saveGuestProfile({
-          sex,
-          age: Math.round(numAge),
-          height: numHeight,
-          weight: numWeight,
-          activity_level: activity,
-          target_calorie: targetCalories,
-          goal,
-          calorieAdjustment,
-        });
+      await saveProfile({
+        sex,
+        primary_goal: goal,
+        age: Math.round(numAge),
+        height: numHeight,
+        weight: numWeight,
+        activity_level: activity,
+        target_calorie: targetCalories,
+      });
 
-        await updateDailyGoals(macros);
-      } else {
-        // Authenticated mode: Save to Supabase `profiles` table
-        await saveProfile({
-          sex,
-          age: Math.round(numAge),
-          height: numHeight,
-          weight: numWeight,
-          activity_level: activity,
-          target_calorie: targetCalories,
-        });
-
-        await updateDailyGoals(macros);
-      }
+      await recordWeight(numWeight);
+      await updateDailyGoals(macros);
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.replace("/(tabs)");

@@ -1,10 +1,8 @@
-import ActiveWorkoutModal from "@/components/workout/active/ActiveWorkoutModal";
-import EditWorkoutModal from "@/components/workout/history/EditWorkoutModal";
-import CreateRoutineModal from "@/components/workout/routines/CreateRoutineModal";
+import ScreenHeader from "@/components/common/ScreenHeader";
 import RoutineCard from "@/components/workout/routines/RoutineCard";
 import { useWorkout } from "@/context/WorkoutContext";
 import { colors, globalStyles } from "@/styles/global";
-import { WorkoutRoutine, WorkoutSession } from "@/types/workout";
+import { WorkoutRoutine } from "@/types/workout";
 import { formatWorkoutTimer } from "@/utils/workoutCalculations";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -19,8 +17,6 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-type ActiveTab = "routines" | "history" | "exercises";
-
 export default function WorkoutScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -31,32 +27,16 @@ export default function WorkoutScreen() {
     startRoutine,
     startEmptyWorkout,
     deleteRoutine,
-    updateSession,
   } = useWorkout();
-
-  const [activeModalVisible, setActiveModalVisible] = useState(false);
-  const [createRoutineVisible, setCreateRoutineVisible] = useState(false);
-  const [editingSession, setEditingSession] = useState<WorkoutSession | null>(
-    null,
-  );
 
   // Routine search & filters
   const [routineSearch] = useState("");
   const [routineCategory] = useState("all");
 
-  // const handleStartRoutine = (routine: WorkoutRoutine) => {
-  //   startRoutine(routine);
-  //   setActiveModalVisible(true);
-  // };
   const handleStartRoutine = (routine: WorkoutRoutine) => {
     startRoutine(routine);
     router.push("/workout/active");
   };
-
-  // const handleStartBlank = () => {
-  //   startEmptyWorkout("Quick Workout");
-  //   setActiveModalVisible(true);
-  // };
 
   const handleStartBlank = () => {
     startEmptyWorkout("Quick Workout");
@@ -88,14 +68,20 @@ export default function WorkoutScreen() {
   return (
     <View style={[globalStyles.container, { paddingTop: insets.top }]}>
       {/* Screen Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={globalStyles.title}>Workout</Text>
-          <Text style={styles.headerSub}>
-            Routines, active tracking & history
-          </Text>
-        </View>
-      </View>
+      <ScreenHeader
+        title="Workout"
+        subtitle="Routines, active tracking & history"
+        rightAction={
+          <TouchableOpacity
+            style={styles.headerActionBtn}
+            onPress={() => router.push("/workout/routines/create")}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="add" size={16} color={colors.text} />
+            <Text style={styles.headerActionText}>New Routine</Text>
+          </TouchableOpacity>
+        }
+      />
 
       <ScrollView
         contentContainerStyle={[
@@ -108,10 +94,6 @@ export default function WorkoutScreen() {
         {activeWorkout ? (
           <TouchableOpacity
             style={styles.activeBanner}
-            // onPress={() => {
-            //   Haptics.selectionAsync();
-            //   setActiveModalVisible(true);
-            // }}
             onPress={() => {
               Haptics.selectionAsync();
               router.push("/workout/active");
@@ -119,12 +101,23 @@ export default function WorkoutScreen() {
             activeOpacity={0.8}
           >
             <View style={styles.activeBannerLeft}>
-              <View>
+              <View style={styles.activeBannerIconWrap}>
+                <Ionicons name="fitness" size={20} color="#FFFFFF" />
+              </View>
+              <View style={styles.activeBannerTextWrap}>
+                <View style={styles.activeStatusRow}>
+                  <View style={styles.livePulseDot} />
+                  <Text style={styles.activeStatusBadge}>IN PROGRESS</Text>
+                </View>
                 <Text style={styles.activeBannerTitle} numberOfLines={1}>
                   {activeWorkout.name}
                 </Text>
                 <Text style={styles.activeBannerSub}>
-                  {activeWorkout.exercises.length} exercises • Tap to open
+                  {activeWorkout.exercises.length}{" "}
+                  {activeWorkout.exercises.length === 1
+                    ? "exercise"
+                    : "exercises"}{" "}
+                  • Tap to resume
                 </Text>
               </View>
             </View>
@@ -142,11 +135,21 @@ export default function WorkoutScreen() {
             activeOpacity={0.7}
           >
             <View style={styles.quickStartLeft}>
+              <View style={styles.quickStartIcon}>
+                <Ionicons name="flash" size={18} color={colors.primary} />
+              </View>
               <View>
                 <Text style={styles.quickStartTitle}>Start Empty Workout</Text>
+                <Text style={styles.quickStartSub}>
+                  Log exercises freely without a routine
+                </Text>
               </View>
             </View>
-            <Ionicons name="arrow-forward" size={18} color={colors.text} />
+            <Ionicons
+              name="arrow-forward"
+              size={18}
+              color={colors.textSecondary}
+            />
           </TouchableOpacity>
         )}
 
@@ -158,16 +161,6 @@ export default function WorkoutScreen() {
               : "Routines"}
           </Text>
         </View>
-
-        <TouchableOpacity
-          style={styles.newRoutineBtn}
-          // onPress={() => setCreateRoutineVisible(true)}
-          onPress={() => router.push("/workout/routines/create")}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="add" size={16} color={colors.text} />
-          <Text style={styles.newRoutineText}>New Routine</Text>
-        </TouchableOpacity>
 
         {filteredRoutines.length === 0 ? (
           <View style={styles.emptyCard}>
@@ -189,94 +182,98 @@ export default function WorkoutScreen() {
           ))
         )}
       </ScrollView>
-
-      {/* Modals */}
-      <ActiveWorkoutModal
-        visible={activeModalVisible}
-        onClose={() => setActiveModalVisible(false)}
-      />
-
-      <CreateRoutineModal
-        visible={createRoutineVisible}
-        onClose={() => setCreateRoutineVisible(false)}
-      />
-
-      <EditWorkoutModal
-        visible={!!editingSession}
-        session={editingSession}
-        onClose={() => setEditingSession(null)}
-        onSave={async (updated) => {
-          await updateSession(updated);
-        }}
-      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    marginBottom: 14,
-  },
-  headerSub: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  newRoutineBtn: {
+  headerActionBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
     backgroundColor: colors.surfaceLight,
-    padding: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
     borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
   },
-  newRoutineText: {
-    fontSize: 14,
-    fontWeight: "600",
+  headerActionText: {
+    fontSize: 13,
+    fontWeight: "700",
     color: colors.text,
   },
   activeBanner: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: colors.primary,
-    marginBottom: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 8,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    marginBottom: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 14,
   },
   activeBannerLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: 12,
     flex: 1,
+  },
+  activeBannerIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  activeBannerTextWrap: {
+    flex: 1,
+  },
+  activeStatusRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 2,
+  },
+  livePulseDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#34D399",
+  },
+  activeStatusBadge: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: "#34D399",
+    letterSpacing: 0.8,
   },
   activeBannerTitle: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "700",
     color: colors.text,
   },
   activeBannerSub: {
     fontSize: 12,
-    color: colors.text,
-    fontWeight: "600",
+    color: colors.textSecondary,
+    marginTop: 2,
   },
   bannerTimer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
+    gap: 5,
+    backgroundColor: colors.surfaceLight,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
   },
   bannerTimerText: {
-    fontSize: 12,
+    fontSize: 13,
+    fontWeight: "700",
     color: colors.text,
+    fontVariant: ["tabular-nums"],
   },
   scrollContent: {
     paddingHorizontal: 16,
@@ -286,27 +283,45 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: colors.surfaceLight,
-    borderRadius: 8,
-    padding: 14,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+    borderRadius: 14,
+    padding: 16,
   },
   quickStartLeft: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
+    flex: 1,
+  },
+  quickStartIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: colors.primaryMuted,
+    alignItems: "center",
+    justifyContent: "center",
   },
   quickStartTitle: {
-    fontSize: 16,
+    fontSize: 15,
+    fontWeight: "700",
     color: colors.text,
   },
+  quickStartSub: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
   sectionHeader: {
-    marginTop: 6,
+    marginTop: 10,
     marginBottom: 2,
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "700",
     color: colors.text,
+    letterSpacing: -0.2,
   },
   emptyCard: {
     borderRadius: 16,

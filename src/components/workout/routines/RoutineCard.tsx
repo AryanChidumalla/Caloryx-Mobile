@@ -1,7 +1,9 @@
+import MuscleDistributionModal from "@/components/workout/exercises/MuscleDistributionModal";
 import { colors } from "@/styles/global";
 import { WorkoutRoutine } from "@/types/workout";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import React, { useState } from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 type RoutineCardProps = {
@@ -15,6 +17,8 @@ export default function RoutineCard({
   onStart,
   onDelete,
 }: RoutineCardProps) {
+  const [musclesModalVisible, setMusclesModalVisible] = useState(false);
+
   const handleStart = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     onStart();
@@ -79,22 +83,38 @@ export default function RoutineCard({
 
       {/* Footer / Start button */}
       <View style={styles.footer}>
-        {/* <View style={styles.statsBadge}>
+        <TouchableOpacity
+          style={styles.statsBadge}
+          onPress={() => setMusclesModalVisible(true)}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="body-outline" size={12} color={colors.textSecondary} />
           <Text style={styles.statsText}>
             {routine.exercises.length}{" "}
             {routine.exercises.length === 1 ? "exercise" : "exercises"}
           </Text>
-        </View> */}
+        </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.startButton}
           onPress={handleStart}
           activeOpacity={0.7}
         >
-          <Ionicons name="play" size={14} color={colors.text} />
+          <Ionicons name="play" size={14} color="#FFFFFF" />
           <Text style={styles.startButtonText}>Start Workout</Text>
         </TouchableOpacity>
       </View>
+
+      <MuscleDistributionModal
+        visible={musclesModalVisible}
+        onClose={() => setMusclesModalVisible(false)}
+        title={routine.name}
+        exercisesList={routine.exercises.map((e) => ({
+          exerciseId: e.exerciseId,
+          exerciseName: e.exerciseName,
+          setsCount: e.targetSets,
+        }))}
+      />
     </View>
   );
 }

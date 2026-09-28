@@ -11,15 +11,21 @@ import {
 } from "@/components/profile";
 import { colors } from "@/styles/global";
 import { TimeFilter } from "@/types/health";
+import { PrimaryGoal } from "@/types/nutrition";
+import {
+  AggregatedDailyMetrics,
+  AggregatedDailyNutrition,
+  AggregatedWeightHistory,
+} from "@/utils/progressCalculations";
 import { Text, View } from "react-native";
 
 type ProfileProgressProps = {
   timeFilter: TimeFilter;
   onTimeFilterChange: (filter: TimeFilter) => void;
   currentWeight: number;
-  weightData: any;
-  activityData: any;
-  waterData: any;
+  weightData: AggregatedWeightHistory;
+  activityData: AggregatedDailyMetrics;
+  waterData: AggregatedDailyMetrics;
   goals: {
     calories: number;
     protein: number;
@@ -28,8 +34,8 @@ type ProfileProgressProps = {
   };
   stepGoal: number;
   waterGoal: number;
-  currentGoal: any;
-  nutritionData: any;
+  currentGoal: PrimaryGoal;
+  nutritionData: AggregatedDailyNutrition;
   daysCount: number;
   deficitOrSurplus: number;
 };

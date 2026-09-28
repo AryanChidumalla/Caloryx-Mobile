@@ -86,3 +86,17 @@ export type GuestProfile = Omit<UserProfile, "id" | "created_at"> & {
   goal?: PrimaryGoal;
   calorieAdjustment?: number;
 };
+
+export type SupabaseFood = {
+  id: number;
+  name: string;
+  aliases: string | null;
+  category: string | null;
+  default_serving_unit: string | null;
+  default_serving_weight_g: number | null;
+  calories_per_serving: number | null;
+  carbs_per_serving: number | null;
+  protein_per_serving: number | null;
+  fat_per_serving: number | null;
+  fiber_per_serving: number | null;
+};

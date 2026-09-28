@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase";
-import { MealEntry, MealType, UserProfile } from "@/types/nutrition";
+import { GuestProfile, MealEntry, MealType, UserProfile } from "@/types/nutrition";
 import { formatLocalDate, getTodayDateString } from "@/utils/date";
 import { generateUUID, sanitizeNumber } from "@/utils/nutritionCalculations";
 
@@ -305,4 +305,28 @@ export async function migrateGuestMealsToSupabase(
   }
 
   return rows.length;
+}
+
+/**
+ * Migrates local guest profile to Supabase `profiles` table.
+ */
+export async function migrateGuestProfileToSupabase(
+  userId: string,
+  guestProfile: GuestProfile,
+): Promise<UserProfile> {
+  const profilePayload: Partial<UserProfile> & { id: string } = {
+    id: userId,
+    sex: guestProfile.sex ?? null,
+    age: guestProfile.age != null ? Math.round(Number(guestProfile.age)) : null,
+    height: guestProfile.height != null ? Number(guestProfile.height) : null,
+    weight: guestProfile.weight != null ? Number(guestProfile.weight) : null,
+    activity_level: guestProfile.activity_level ?? null,
+    primary_goal: guestProfile.primary_goal || guestProfile.goal || null,
+    target_calorie:
+      guestProfile.target_calorie != null
+        ? Math.round(Number(guestProfile.target_calorie))
+        : null,
+  };
+
+  return await upsertUserProfile(profilePayload);
 }

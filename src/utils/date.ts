@@ -127,3 +127,37 @@ export function getShortMonthDay(dateString: string): string {
   const d = parseLocalDate(dateString);
   return `${MONTH_NAMES[d.getMonth()]} ${d.getDate()}`;
 }
+
+/**
+ * Generates an array of date strings (YYYY-MM-DD) from (today - (days - 1)) up to today.
+ */
+export function getDateRangeList(days: number): string[] {
+  const dates: string[] = [];
+  const today = new Date();
+
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    dates.push(formatLocalDate(d));
+  }
+
+  return dates;
+}
+
+/**
+ * Formats an ISO timestamp or date string into a user-friendly short date (e.g. "Mon, Sep 28").
+ */
+export function formatTimestampForDisplay(isoString?: string | null): string {
+  if (!isoString) return "";
+  try {
+    const d = new Date(isoString);
+    if (isNaN(d.getTime())) return String(isoString);
+    return d.toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+    });
+  } catch {
+    return String(isoString);
+  }
+}

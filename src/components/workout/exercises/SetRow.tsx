@@ -13,6 +13,10 @@ import {
 type SetRowProps = {
   set: ExerciseSet;
   isTimed?: boolean;
+  previousPerformance?: string | null;
+  previousWeight?: number;
+  previousReps?: number;
+  previousDuration?: number;
   onUpdate: (updates: Partial<ExerciseSet>) => void;
   onToggleComplete: () => void;
   onDelete: () => void;
@@ -21,6 +25,10 @@ type SetRowProps = {
 export default function SetRow({
   set,
   isTimed,
+  previousPerformance,
+  previousWeight,
+  previousReps,
+  previousDuration,
   onUpdate,
   onToggleComplete,
   onDelete,
@@ -47,7 +55,8 @@ export default function SetRow({
   };
 
   return (
-    <View style={[styles.row, set.completed && styles.rowCompleted]}>
+    <View style={styles.setRowWrapper}>
+      <View style={[styles.row, set.completed && styles.rowCompleted]}>
       {/* Set Number / Type button */}
       <TouchableOpacity
         style={[
@@ -73,7 +82,9 @@ export default function SetRow({
         <TextInput
           style={[styles.input, set.completed && styles.inputCompleted]}
           keyboardType="numeric"
-          placeholder="0"
+          placeholder={
+            previousWeight && previousWeight > 0 ? String(previousWeight) : "0"
+          }
           placeholderTextColor={colors.textMuted}
           value={set.weightKg > 0 ? String(set.weightKg) : ""}
           onChangeText={(val) => {
@@ -90,7 +101,11 @@ export default function SetRow({
           <TextInput
             style={[styles.input, set.completed && styles.inputCompleted]}
             keyboardType="numeric"
-            placeholder="30"
+            placeholder={
+              previousDuration && previousDuration > 0
+                ? String(previousDuration)
+                : "30"
+            }
             placeholderTextColor={colors.textMuted}
             value={
               set.durationSeconds && set.durationSeconds > 0
@@ -109,7 +124,9 @@ export default function SetRow({
           <TextInput
             style={[styles.input, set.completed && styles.inputCompleted]}
             keyboardType="numeric"
-            placeholder="10"
+            placeholder={
+              previousReps && previousReps > 0 ? String(previousReps) : "10"
+            }
             placeholderTextColor={colors.textMuted}
             value={set.reps > 0 ? String(set.reps) : ""}
             onChangeText={(val) => {
@@ -142,6 +159,16 @@ export default function SetRow({
       >
         <Ionicons name="close" size={14} color={colors.textMuted} />
       </TouchableOpacity>
+    </View>
+
+    {previousPerformance ? (
+      <View style={styles.prevContainer}>
+        <Text style={styles.prevText}>
+          <Text style={styles.prevLabel}>PREV: </Text>
+          {previousPerformance}
+        </Text>
+      </View>
+    ) : null}
     </View>
   );
 }
@@ -231,5 +258,26 @@ const styles = StyleSheet.create({
     height: 24,
     justifyContent: "center",
     alignItems: "center",
+  },
+  setRowWrapper: {
+    marginBottom: 6,
+  },
+  prevContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingLeft: 44,
+    marginTop: -2,
+    marginBottom: 4,
+  },
+  prevText: {
+    fontSize: 11,
+    color: colors.textMuted,
+    fontWeight: "500",
+  },
+  prevLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: colors.primary,
+    letterSpacing: 0.5,
   },
 });

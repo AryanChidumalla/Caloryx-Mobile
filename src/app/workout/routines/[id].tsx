@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -17,7 +18,7 @@ export default function RoutineDetailsScreen() {
 
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  const { routines, startRoutine } = useWorkout();
+  const { routines, startRoutine, deleteRoutine } = useWorkout();
 
   const routine = routines.find((item) => item.id === id);
 
@@ -58,6 +59,21 @@ export default function RoutineDetailsScreen() {
     router.push("/workout/active");
   };
 
+  const handleOptions = () => {
+    if (!routine.isCustom) return;
+    Alert.alert("Routine Options", `Manage "${routine.name}"`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete Routine",
+        style: "destructive",
+        onPress: async () => {
+          await deleteRoutine(routine.id);
+          router.back();
+        },
+      },
+    ]);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -65,6 +81,8 @@ export default function RoutineDetailsScreen() {
         <TouchableOpacity
           onPress={() => router.back()}
           style={styles.backButton}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
           hitSlop={{
             top: 10,
             bottom: 10,
@@ -79,18 +97,22 @@ export default function RoutineDetailsScreen() {
           Routine
         </Text>
 
-        <TouchableOpacity
-          style={styles.editButton}
-          onPress={() => {
-            // We'll connect this later.
-          }}
-        >
-          <Ionicons
-            name="create-outline"
-            size={20}
-            color={colors.textSecondary}
-          />
-        </TouchableOpacity>
+        {routine.isCustom ? (
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={handleOptions}
+            accessibilityRole="button"
+            accessibilityLabel="Routine options"
+          >
+            <Ionicons
+              name="ellipsis-horizontal"
+              size={20}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.headerSpacer} />
+        )}
       </View>
 
       <ScrollView

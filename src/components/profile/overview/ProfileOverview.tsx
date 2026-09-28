@@ -4,12 +4,13 @@ import {
   PersonalPlanCard,
 } from "@/components/profile";
 import { colors } from "@/styles/global";
+import { UserProfile } from "@/types/nutrition";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 type ProfileOverviewProps = {
-  profile: any;
+  profile: UserProfile | null;
   goals: {
     calories: number;
     protein: number;

@@ -2,33 +2,32 @@ import DashboardGreeting from "@/components/dashboard/DashboardGreeting";
 import DashboardWorkoutCard from "@/components/dashboard/DashboardWorkoutCard";
 import DateNavigator from "@/components/dashboard/DateNavigator";
 import NutritionOverview from "@/components/dashboard/NutritionOverview";
+import SleepTrackerCard from "@/components/dashboard/SleepTrackerCard";
 import StepsTrackerCard from "@/components/dashboard/StepsTrackerCard";
 import WaterTrackerCard from "@/components/dashboard/WaterTrackerCard";
-import EditWorkoutModal from "@/components/workout/history/EditWorkoutModal";
 import { useAuth } from "@/context/AuthContext";
+import { useHealth } from "@/context/HealthContext";
 import { useNutrition } from "@/context/NutritionContext";
 import { useWorkout } from "@/context/WorkoutContext";
 import { colors, globalStyles } from "@/styles/global";
-import { WorkoutSession } from "@/types/workout";
-import { isToday } from "@/utils/date";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { profile, user, mode } = useAuth();
   const { selectedDate, goToToday, refreshAll, isLoading } = useNutrition();
-  const { updateSession, refreshWorkouts } = useWorkout();
+  const { refreshWorkouts } = useWorkout();
+  const { refreshHealth } = useHealth();
 
-  const [goalsModalVisible, setGoalsModalVisible] = useState(false);
-  const [editingWorkoutSession, setEditingWorkoutSession] =
-    useState<WorkoutSession | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([refreshAll(), refreshWorkouts()]);
+    await Promise.all([refreshAll(), refreshWorkouts(), refreshHealth()]);
     setRefreshing(false);
   };
 
@@ -36,8 +35,6 @@ export default function DashboardScreen() {
     profile?.username ||
     user?.email?.split("@")[0] ||
     (mode === "guest" ? "Guest" : "there");
-
-  const isCurrentDateToday = isToday(selectedDate);
 
   return (
     <View
@@ -57,8 +54,6 @@ export default function DashboardScreen() {
           />
         }
       >
-        {/* <HomeHeader /> */}
-
         <DashboardGreeting
           displayName={displayName}
           selectedDate={selectedDate}
@@ -76,28 +71,20 @@ export default function DashboardScreen() {
         {/* Activity details */}
         <DashboardWorkoutCard
           date={selectedDate}
-          onEditWorkout={(session) => setEditingWorkoutSession(session)}
+          onEditWorkout={(session) =>
+            router.push({
+              pathname: "/workout/edit/[id]",
+              params: { id: session.id },
+            })
+          }
         />
 
         {/* Hydration */}
         <WaterTrackerCard date={selectedDate} />
+
+        {/* Sleep & Recovery */}
+        <SleepTrackerCard date={selectedDate} />
       </ScrollView>
-
-      {/* Goal Settings Modal */}
-      {/* <GoalSettingsModal
-        visible={goalsModalVisible}
-        onClose={() => setGoalsModalVisible(false)}
-      /> */}
-
-      {/* Edit Completed Workout Modal */}
-      <EditWorkoutModal
-        visible={!!editingWorkoutSession}
-        session={editingWorkoutSession}
-        onClose={() => setEditingWorkoutSession(null)}
-        onSave={async (updated) => {
-          await updateSession(updated);
-        }}
-      />
     </View>
   );
 }

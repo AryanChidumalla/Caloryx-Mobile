@@ -1,9 +1,13 @@
 import { useWorkout } from "@/context/WorkoutContext";
 import { colors } from "@/styles/global";
 import { ExerciseSet, SessionExercise } from "@/types/workout";
+import {
+  formatPreviousPerformance,
+  getPreviousExercisePerformance,
+} from "@/utils/workoutCalculations";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Alert,
   Image,
@@ -48,7 +52,7 @@ export default function ExerciseCard({
   onUpdateNotes,
 }: ExerciseCardProps) {
   const router = useRouter();
-  const { exercises } = useWorkout();
+  const { exercises, sessions, activeWorkout } = useWorkout();
 
   const [showNotes, setShowNotes] = useState(Boolean(exercise.notes));
 
@@ -59,6 +63,14 @@ export default function ExerciseCard({
   const isTimed =
     exercise.category === "cardio" ||
     exercise.exerciseName.toLowerCase().includes("plank");
+
+  const previousPerformance = useMemo(() => {
+    return getPreviousExercisePerformance(
+      exercise.exerciseId || exercise.exerciseName,
+      sessions,
+      activeWorkout?.id,
+    );
+  }, [exercise.exerciseId, exercise.exerciseName, sessions, activeWorkout?.id]);
 
   const handleOpenDetails = () => {
     if (!exercise.exerciseId) return;
@@ -227,16 +239,32 @@ export default function ExerciseCard({
 
       {/* Sets */}
       <View style={styles.setsList}>
-        {exercise.sets.map((set, sIdx) => (
-          <SetRow
-            key={set.id || `set-${sIdx}`}
-            set={set}
-            isTimed={isTimed}
-            onUpdate={(updates) => onUpdateSet(sIdx, updates)}
-            onToggleComplete={() => onToggleSetCompleted(sIdx)}
-            onDelete={() => onRemoveSet(sIdx)}
-          />
-        ))}
+        {exercise.sets.map((set, sIdx) => {
+          const prevSet =
+            previousPerformance?.exercise.sets[sIdx] ||
+            (previousPerformance?.exercise.sets &&
+            previousPerformance.exercise.sets.length > 0
+              ? previousPerformance.exercise.sets[
+                  previousPerformance.exercise.sets.length - 1
+                ]
+              : undefined);
+          const prevFormatted = formatPreviousPerformance(prevSet, isTimed);
+
+          return (
+            <SetRow
+              key={set.id || `set-${sIdx}`}
+              set={set}
+              isTimed={isTimed}
+              previousPerformance={prevFormatted}
+              previousWeight={prevSet?.weightKg}
+              previousReps={prevSet?.reps}
+              previousDuration={prevSet?.durationSeconds}
+              onUpdate={(updates) => onUpdateSet(sIdx, updates)}
+              onToggleComplete={() => onToggleSetCompleted(sIdx)}
+              onDelete={() => onRemoveSet(sIdx)}
+            />
+          );
+        })}
       </View>
 
       {/* Add Set */}

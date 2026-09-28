@@ -21,7 +21,8 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.aryan11202steam.caloryx",
-      "permissions": ["android.permission.health.READ_STEPS"]
+      "permissions": ["android.permission.health.READ_STEPS"],
+      "allowBackup": false
     },
 
     "web": {

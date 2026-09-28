@@ -24,8 +24,6 @@ export default function ExerciseDetailsScreen() {
 
   const exercise = exercises.find((ex) => ex.id === id);
 
-  console.log(exercise);
-
   if (!exercise) {
     return (
       <View style={styles.container}>
@@ -45,6 +43,8 @@ export default function ExerciseDetailsScreen() {
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
         >
           <Ionicons name="arrow-back" size={22} color={colors.text} />
         </TouchableOpacity>
@@ -58,46 +58,14 @@ export default function ExerciseDetailsScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
       >
-        {/* Exercise Image */}
-        {/* {imageUrl && (
-          <Image
-            source={{ uri: imageUrl }}
-            style={styles.exerciseImage}
-            resizeMode="cover"
-          />
-        )} */}
-
         {/* Name */}
         <Text style={styles.exerciseName}>{exercise.name}</Text>
 
-        {/* Basic info */}
-        {/* <View style={styles.infoRow}>
-          <View style={styles.infoCard}>
-            <Text style={styles.infoLabel}>Target</Text>
-            <Text style={styles.infoValue}>{exercise.target || "—"}</Text>
-          </View>
-
-          <View style={styles.infoCard}>
-            <Text style={styles.infoLabel}>Equipment</Text>
-            <Text style={styles.infoValue}>{exercise.equipment || "—"}</Text>
-          </View>
-        </View> */}
-
-        {/* Muscle information */}
-        {/* Information */}
+        {/* Target and Equipment Details */}
         <View style={styles.section}>
-          {/* <Text style={styles.sectionTitle}>Muscles</Text> */}
-
-          {/* <View style={styles.muscleRow}>
-            <Text style={styles.muscleLabel}>Primary</Text>
-            <Text style={styles.muscleValue}>
-              {exercise.muscleGroup || "—"}
-            </Text>
-          </View> */}
-
           <View style={styles.muscleRow}>
             <Text style={styles.muscleLabel}>Target</Text>
-            <Text style={styles.muscleValue}>{exercise.target || "-"}</Text>
+            <Text style={styles.muscleValue}>{exercise.target || "—"}</Text>
           </View>
 
           {Boolean(

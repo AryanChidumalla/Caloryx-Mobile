@@ -1,56 +1,87 @@
-# Welcome to your Expo app 👋
+# Caloryx Mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A minimal, modern health, fitness, and nutrition tracking mobile application built with React Native and Expo. Caloryx unifies workout logging, macro tracking, daily activity, hydration, and sleep into a clean, single-view wellness platform.
 
-## Get started
+---
 
-1. Install dependencies
+## Features
+
+- **Daily Dashboard**: Centralized day overview tracking steps, nutrition calories/macros, active workouts, hydration, and sleep.
+- **Workout Tracking**: Active session logger with set-by-set previous performance context (`PREV: weight × reps`), muscle group distribution visualization, and custom routines.
+- **Nutrition & Macros**: Calorie and macro target tracking (protein, carbs, fat), fast food search with caching, and custom meal logging.
+- **Health & Recovery**: Step tracking via Health Connect (Android) with Pedometer fallback, hydration logging with quick-add presets, and sleep duration/quality tracking.
+- **Personalized Goals**: Built-in BMR and TDEE calculators, goal adjustments (fat loss, maintenance, muscle gain), and body stat tracking.
+- **Offline & Guest Mode**: Full offline-first functionality with local storage, plus optional Supabase cloud sync and automatic guest-to-account migration.
+
+---
+
+## Tech Stack
+
+- **Framework**: [React Native](https://reactnative.dev/) (0.86) with [Expo](https://expo.dev/) (SDK 57)
+- **Routing**: [Expo Router](https://docs.expo.dev/router/introduction/) (file-based navigation)
+- **Language**: TypeScript
+- **Backend & Auth**: [Supabase](https://supabase.com/)
+- **Local Storage**: `@react-native-async-storage/async-storage`
+- **Health & Sensors**: `react-native-health-connect` & `expo-sensors`
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js (v18+)
+- npm or yarn
+- Expo Go app on your phone, or an Android/iOS emulator
+
+### Installation
+
+1. Clone the repository and install dependencies:
 
    ```bash
    npm install
    ```
 
-2. Start the app
+2. (Optional) Configure environment variables for Supabase in a `.env` file:
 
-   ```bash
-   npx expo start
+   ```env
+   EXPO_PUBLIC_SUPABASE_URL=your_supabase_url
+   EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
    ```
 
-In the output, you'll find options to open the app in a
+   *Note: Caloryx can be run completely in Guest Mode without Supabase credentials.*
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+### Running the App
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+Start the Expo development server:
 
 ```bash
-npm run reset-project
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+- Press `a` to open in Android emulator
+- Press `i` to open in iOS simulator
+- Scan the QR code using the **Expo Go** app on your physical device
 
-### Other setup steps
+To run validation checks:
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+```bash
+npm run lint         # Run ESLint
+npx tsc --noEmit     # Check TypeScript types
+```
 
-## Learn more
+---
 
-To learn more about developing your project with Expo, look at the following resources:
+## Project Structure
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```text
+src/
+├── app/          # Expo Router routes (tabs, workout flows, auth, profile)
+├── components/   # UI components organized by feature (dashboard, nutrition, workout, profile, common)
+├── context/      # State management (AuthContext, HealthContext, NutritionContext, WorkoutContext)
+├── services/     # Cloud synchronization and external APIs (Supabase, step tracking)
+├── storage/      # Local persistence handlers (AsyncStorage)
+├── styles/       # Design tokens, colors, typography, and spacing
+├── types/        # TypeScript domain models (health, nutrition, workout)
+└── utils/        # Calculation logic (BMR/TDEE, workout volume, dates, progress)
+```

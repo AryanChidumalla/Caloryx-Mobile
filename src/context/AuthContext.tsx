@@ -1,10 +1,16 @@
 import {
   fetchUserProfile,
   migrateGuestMealsToSupabase,
+  migrateGuestProfileToSupabase,
   upsertUserProfile,
 } from "@/services/nutritionSync";
-import { getMeals } from "@/storage/nutritionStorage";
-import { UserProfile } from "@/types/nutrition";
+import { migrateGuestHealthData } from "@/storage/healthStorage";
+import {
+  getGuestProfile,
+  getMeals,
+  saveGuestProfile,
+} from "@/storage/nutritionStorage";
+import { GuestProfile, UserProfile } from "@/types/nutrition";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Session, User } from "@supabase/supabase-js";
 import React, {
@@ -57,37 +63,124 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
-  const handleGuestMigration = useCallback(async (userId: string) => {
+  const loadGuestProfile = useCallback(async (): Promise<UserProfile | null> => {
     try {
-      const alreadyMigrated = await AsyncStorage.getItem(
-        `${GUEST_MIGRATED_KEY}_${userId}`,
-      );
-      if (alreadyMigrated === "true") {
-        return;
+      const guestData = await getGuestProfile();
+      if (!guestData) {
+        setProfile(null);
+        return null;
       }
-
-      const guestMeals = await getMeals();
-      if (guestMeals && guestMeals.length > 0) {
-        await migrateGuestMealsToSupabase(userId, guestMeals);
-        await AsyncStorage.setItem(`${GUEST_MIGRATED_KEY}_${userId}`, "true");
-      }
+      const guestUserProfile: UserProfile = {
+        id: "guest",
+        username: "Guest User",
+        sex: guestData.sex ?? null,
+        age: guestData.age ?? null,
+        height: guestData.height ?? null,
+        weight: guestData.weight ?? null,
+        activity_level: guestData.activity_level ?? null,
+        primary_goal: guestData.primary_goal || guestData.goal || null,
+        target_calorie: guestData.target_calorie ?? null,
+      };
+      setProfile(guestUserProfile);
+      return guestUserProfile;
     } catch (err) {
-      console.warn("Guest data migration warning:", err);
+      console.error("Failed to load guest profile:", err);
+      return null;
     }
   }, []);
 
+  const handleGuestMigration = useCallback(
+    async (userId: string) => {
+      try {
+        const alreadyMigrated = await AsyncStorage.getItem(
+          `${GUEST_MIGRATED_KEY}_${userId}`,
+        );
+        if (alreadyMigrated === "true") {
+          return;
+        }
+
+        // 1. Migrate guest meals
+        const guestMeals = await getMeals();
+        if (guestMeals && guestMeals.length > 0) {
+          await migrateGuestMealsToSupabase(userId, guestMeals);
+        }
+
+        // 2. Migrate guest profile if user lacks target calories in Supabase
+        const guestData = await getGuestProfile();
+        if (guestData && (guestData.target_calorie || guestData.weight)) {
+          const existingUserProfile = await fetchUserProfile(userId);
+          if (!existingUserProfile?.target_calorie) {
+            await migrateGuestProfileToSupabase(userId, guestData);
+            await loadUserProfile(userId);
+          }
+        }
+
+        // 3. Migrate guest health data (water, steps, weight)
+        await migrateGuestHealthData(userId);
+
+        await AsyncStorage.setItem(`${GUEST_MIGRATED_KEY}_${userId}`, "true");
+      } catch (err) {
+        console.warn("Guest data migration warning:", err);
+      }
+    },
+    [loadUserProfile],
+  );
+
   const refreshProfile = useCallback(async (): Promise<UserProfile | null> => {
-    if (!session?.user?.id) return null;
-    return await loadUserProfile(session.user.id);
-  }, [session, loadUserProfile]);
+    if (session?.user?.id) {
+      return await loadUserProfile(session.user.id);
+    }
+    if (mode === "guest") {
+      return await loadGuestProfile();
+    }
+    return null;
+  }, [session, mode, loadUserProfile, loadGuestProfile]);
 
   const saveProfile = useCallback(
     async (profileData: Partial<UserProfile>): Promise<UserProfile> => {
-      if (!session?.user?.id) {
-        throw new Error("No authenticated user to save profile for.");
-      }
+      if (mode === "guest" || !session?.user?.id) {
+        // Save as guest in local AsyncStorage
+        const existingGuest = (await getGuestProfile()) || {};
+        const updatedGuest: GuestProfile = {
+          ...existingGuest,
+          sex: profileData.sex !== undefined ? profileData.sex : existingGuest.sex,
+          age: profileData.age !== undefined ? profileData.age : existingGuest.age,
+          height:
+            profileData.height !== undefined
+              ? profileData.height
+              : existingGuest.height,
+          weight:
+            profileData.weight !== undefined
+              ? profileData.weight
+              : existingGuest.weight,
+          activity_level:
+            profileData.activity_level !== undefined
+              ? profileData.activity_level
+              : existingGuest.activity_level,
+          primary_goal:
+            profileData.primary_goal !== undefined
+              ? profileData.primary_goal
+              : existingGuest.primary_goal || existingGuest.goal,
+          goal:
+            (profileData.primary_goal !== undefined
+              ? profileData.primary_goal
+              : existingGuest.goal || existingGuest.primary_goal) || undefined,
+          target_calorie:
+            profileData.target_calorie !== undefined
+              ? profileData.target_calorie
+              : existingGuest.target_calorie,
+        };
+        await saveGuestProfile(updatedGuest);
 
-      console.log("Saving profile:", profileData);
+        const guestUserProfile: UserProfile = {
+          id: "guest",
+          username: "Guest User",
+          ...updatedGuest,
+          primary_goal: updatedGuest.primary_goal || updatedGuest.goal || null,
+        };
+        setProfile(guestUserProfile);
+        return guestUserProfile;
+      }
 
       const updated = await upsertUserProfile({
         ...profileData,
@@ -97,7 +190,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setProfile(updated);
       return updated;
     },
-    [session],
+    [session, mode],
   );
 
   useEffect(() => {
@@ -130,6 +223,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const storedMode = await AsyncStorage.getItem(AUTH_MODE_KEY);
           if (storedMode === "guest") {
             setMode("guest");
+            await loadGuestProfile();
           }
         }
       } catch (error) {
@@ -168,13 +262,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [loadUserProfile, handleGuestMigration]);
+  }, [loadUserProfile, loadGuestProfile, handleGuestMigration]);
 
   async function continueAsGuest() {
     await AsyncStorage.setItem(ONBOARDING_COMPLETE_KEY, "true");
     await AsyncStorage.setItem(AUTH_MODE_KEY, "guest");
     setMode("guest");
-    setProfile(null);
+    await loadGuestProfile();
   }
 
   async function signOut() {

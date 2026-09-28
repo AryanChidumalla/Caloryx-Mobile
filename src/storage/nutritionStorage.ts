@@ -7,7 +7,11 @@ import {
 } from "@/types/nutrition";
 import { formatLocalDate, getTodayDateString } from "@/utils/date";
 import { sanitizeNumber } from "@/utils/nutritionCalculations";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  getJsonStorageItem,
+  removeStorageItem,
+  setJsonStorageItem,
+} from "./asyncStorageUtils";
 
 export const STORAGE_KEYS = {
   MEALS: "@caloryx/meals_v2",
@@ -105,42 +109,34 @@ function inferMealTypeFromDate(isoDateStr: string): MealType {
  * Migration from v1 un-dated format to v2 date-keyed entries.
  */
 async function migrateLegacyMealsIfNecessary(): Promise<MealEntry[]> {
-  try {
-    const rawLegacy = await AsyncStorage.getItem(STORAGE_KEYS.LEGACY_MEALS);
-    if (!rawLegacy) return [];
+  const parsed = await getJsonStorageItem<unknown[]>(
+    STORAGE_KEYS.LEGACY_MEALS,
+    [],
+  );
+  if (!Array.isArray(parsed) || parsed.length === 0) return [];
 
-    const parsed = JSON.parse(rawLegacy);
-    if (!Array.isArray(parsed) || parsed.length === 0) return [];
+  const migrated: MealEntry[] = parsed.map((item: any, idx: number) => {
+    const createdAt = item.createdAt || new Date().toISOString();
+    const date = item.date || formatLocalDate(new Date(createdAt));
 
-    const migrated: MealEntry[] = parsed.map((item, idx) => {
-      const createdAt = item.createdAt || new Date().toISOString();
-      const date = item.date || formatLocalDate(new Date(createdAt));
+    return {
+      id: item.id || `legacy-${Date.now()}-${idx}`,
+      name: String(item.name || "Untitled Meal"),
+      calories: sanitizeNumber(item.calories, 0, true),
+      protein: sanitizeNumber(item.protein, 0),
+      carbs: sanitizeNumber(item.carbs, 0),
+      fat: sanitizeNumber(item.fat, 0),
+      date,
+      mealType: item.mealType || inferMealTypeFromDate(createdAt),
+      servingSize: item.servingSize || undefined,
+      servings: sanitizeNumber(item.servings, 1),
+      createdAt,
+      updatedAt: item.updatedAt || createdAt,
+    };
+  });
 
-      return {
-        id: item.id || `legacy-${Date.now()}-${idx}`,
-        name: String(item.name || "Untitled Meal"),
-        calories: sanitizeNumber(item.calories, 0, true),
-        protein: sanitizeNumber(item.protein, 0),
-        carbs: sanitizeNumber(item.carbs, 0),
-        fat: sanitizeNumber(item.fat, 0),
-        date,
-        mealType: item.mealType || inferMealTypeFromDate(createdAt),
-        servingSize: item.servingSize || undefined,
-        servings: sanitizeNumber(item.servings, 1),
-        createdAt,
-        updatedAt: item.updatedAt || createdAt,
-      };
-    });
-
-    await AsyncStorage.setItem(
-      STORAGE_KEYS.MEALS,
-      JSON.stringify(migrated),
-    );
-    return migrated;
-  } catch (err) {
-    console.error("Failed to migrate legacy meals:", err);
-    return [];
-  }
+  await setJsonStorageItem(STORAGE_KEYS.MEALS, migrated);
+  return migrated;
 }
 
 // -----------------------------------------------------------------------------
@@ -148,35 +144,27 @@ async function migrateLegacyMealsIfNecessary(): Promise<MealEntry[]> {
 // -----------------------------------------------------------------------------
 
 export async function getMeals(): Promise<MealEntry[]> {
-  try {
-    const data = await AsyncStorage.getItem(STORAGE_KEYS.MEALS);
-    if (!data) {
-      return await migrateLegacyMealsIfNecessary();
-    }
-    const parsed = JSON.parse(data);
-    if (!Array.isArray(parsed)) return [];
-
-    return parsed.map((m) => ({
-      ...m,
-      calories: sanitizeNumber(m.calories, 0, true),
-      protein: sanitizeNumber(m.protein, 0),
-      carbs: sanitizeNumber(m.carbs, 0),
-      fat: sanitizeNumber(m.fat, 0),
-      servings: sanitizeNumber(m.servings, 1),
-    }));
-  } catch (err) {
-    console.error("Error loading meals from AsyncStorage:", err);
-    return [];
+  const data = await getJsonStorageItem<MealEntry[] | null>(
+    STORAGE_KEYS.MEALS,
+    null,
+  );
+  if (!data) {
+    return await migrateLegacyMealsIfNecessary();
   }
+  if (!Array.isArray(data)) return [];
+
+  return data.map((m) => ({
+    ...m,
+    calories: sanitizeNumber(m.calories, 0, true),
+    protein: sanitizeNumber(m.protein, 0),
+    carbs: sanitizeNumber(m.carbs, 0),
+    fat: sanitizeNumber(m.fat, 0),
+    servings: sanitizeNumber(m.servings, 1),
+  }));
 }
 
 export async function saveMeals(meals: MealEntry[]): Promise<void> {
-  try {
-    await AsyncStorage.setItem(STORAGE_KEYS.MEALS, JSON.stringify(meals));
-  } catch (err) {
-    console.error("Error saving meals to AsyncStorage:", err);
-    throw err;
-  }
+  await setJsonStorageItem(STORAGE_KEYS.MEALS, meals);
 }
 
 export async function addMeal(
@@ -228,8 +216,8 @@ export async function deleteMeal(id: string): Promise<void> {
 }
 
 export async function clearAllMeals(): Promise<void> {
-  await AsyncStorage.removeItem(STORAGE_KEYS.MEALS);
-  await AsyncStorage.removeItem(STORAGE_KEYS.LEGACY_MEALS);
+  await removeStorageItem(STORAGE_KEYS.MEALS);
+  await removeStorageItem(STORAGE_KEYS.LEGACY_MEALS);
 }
 
 // -----------------------------------------------------------------------------
@@ -237,20 +225,17 @@ export async function clearAllMeals(): Promise<void> {
 // -----------------------------------------------------------------------------
 
 export async function getGoals(): Promise<DailyGoals> {
-  try {
-    const data = await AsyncStorage.getItem(STORAGE_KEYS.GOALS);
-    if (!data) return DEFAULT_GOALS;
-    const parsed = JSON.parse(data);
-    return {
-      calories: sanitizeNumber(parsed.calories, DEFAULT_GOALS.calories, true),
-      protein: sanitizeNumber(parsed.protein, DEFAULT_GOALS.protein),
-      carbs: sanitizeNumber(parsed.carbs, DEFAULT_GOALS.carbs),
-      fat: sanitizeNumber(parsed.fat, DEFAULT_GOALS.fat),
-    };
-  } catch (err) {
-    console.error("Error reading goals from AsyncStorage:", err);
-    return DEFAULT_GOALS;
-  }
+  const parsed = await getJsonStorageItem<DailyGoals | null>(
+    STORAGE_KEYS.GOALS,
+    null,
+  );
+  if (!parsed) return DEFAULT_GOALS;
+  return {
+    calories: sanitizeNumber(parsed.calories, DEFAULT_GOALS.calories, true),
+    protein: sanitizeNumber(parsed.protein, DEFAULT_GOALS.protein),
+    carbs: sanitizeNumber(parsed.carbs, DEFAULT_GOALS.carbs),
+    fat: sanitizeNumber(parsed.fat, DEFAULT_GOALS.fat),
+  };
 }
 
 export async function updateGoals(goals: DailyGoals): Promise<DailyGoals> {
@@ -260,7 +245,7 @@ export async function updateGoals(goals: DailyGoals): Promise<DailyGoals> {
     carbs: sanitizeNumber(goals.carbs, DEFAULT_GOALS.carbs),
     fat: sanitizeNumber(goals.fat, DEFAULT_GOALS.fat),
   };
-  await AsyncStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify(sanitized));
+  await setJsonStorageItem(STORAGE_KEYS.GOALS, sanitized);
   return sanitized;
 }
 
@@ -269,25 +254,14 @@ export async function updateGoals(goals: DailyGoals): Promise<DailyGoals> {
 // -----------------------------------------------------------------------------
 
 export async function getGuestProfile(): Promise<GuestProfile | null> {
-  try {
-    const data = await AsyncStorage.getItem(STORAGE_KEYS.GUEST_PROFILE);
-    if (!data) return null;
-    return JSON.parse(data) as GuestProfile;
-  } catch (err) {
-    console.error("Error reading guest profile:", err);
-    return null;
-  }
+  return getJsonStorageItem<GuestProfile | null>(
+    STORAGE_KEYS.GUEST_PROFILE,
+    null,
+  );
 }
 
 export async function saveGuestProfile(profile: GuestProfile): Promise<void> {
-  try {
-    await AsyncStorage.setItem(
-      STORAGE_KEYS.GUEST_PROFILE,
-      JSON.stringify(profile),
-    );
-  } catch (err) {
-    console.error("Error saving guest profile:", err);
-  }
+  await setJsonStorageItem(STORAGE_KEYS.GUEST_PROFILE, profile);
 }
 
 // -----------------------------------------------------------------------------
@@ -295,21 +269,15 @@ export async function saveGuestProfile(profile: GuestProfile): Promise<void> {
 // -----------------------------------------------------------------------------
 
 export async function getSavedFoods(): Promise<SavedFood[]> {
-  try {
-    const data = await AsyncStorage.getItem(STORAGE_KEYS.SAVED_FOODS);
-    if (!data) {
-      await AsyncStorage.setItem(
-        STORAGE_KEYS.SAVED_FOODS,
-        JSON.stringify(DEFAULT_SAVED_FOODS),
-      );
-      return DEFAULT_SAVED_FOODS;
-    }
-    const parsed = JSON.parse(data);
-    return Array.isArray(parsed) ? parsed : DEFAULT_SAVED_FOODS;
-  } catch (err) {
-    console.error("Error reading saved foods:", err);
+  const data = await getJsonStorageItem<SavedFood[] | null>(
+    STORAGE_KEYS.SAVED_FOODS,
+    null,
+  );
+  if (!data) {
+    await setJsonStorageItem(STORAGE_KEYS.SAVED_FOODS, DEFAULT_SAVED_FOODS);
     return DEFAULT_SAVED_FOODS;
   }
+  return Array.isArray(data) ? data : DEFAULT_SAVED_FOODS;
 }
 
 export async function saveFoodItem(
@@ -329,20 +297,14 @@ export async function saveFoodItem(
   };
 
   const updated = [newFood, ...savedFoods];
-  await AsyncStorage.setItem(
-    STORAGE_KEYS.SAVED_FOODS,
-    JSON.stringify(updated),
-  );
+  await setJsonStorageItem(STORAGE_KEYS.SAVED_FOODS, updated);
   return newFood;
 }
 
 export async function deleteSavedFoodItem(id: string): Promise<void> {
   const savedFoods = await getSavedFoods();
   const filtered = savedFoods.filter((f) => f.id !== id);
-  await AsyncStorage.setItem(
-    STORAGE_KEYS.SAVED_FOODS,
-    JSON.stringify(filtered),
-  );
+  await setJsonStorageItem(STORAGE_KEYS.SAVED_FOODS, filtered);
 }
 
 export async function incrementSavedFoodUsage(id: string): Promise<void> {
@@ -356,8 +318,5 @@ export async function incrementSavedFoodUsage(id: string): Promise<void> {
         }
       : f,
   );
-  await AsyncStorage.setItem(
-    STORAGE_KEYS.SAVED_FOODS,
-    JSON.stringify(updated),
-  );
+  await setJsonStorageItem(STORAGE_KEYS.SAVED_FOODS, updated);
 }

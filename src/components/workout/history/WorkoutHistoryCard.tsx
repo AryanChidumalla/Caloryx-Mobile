@@ -1,5 +1,6 @@
 import { colors } from "@/styles/global";
 import { WorkoutSession } from "@/types/workout";
+import { formatTimestampForDisplay } from "@/utils/date";
 import {
   calculateTotalExercises,
   calculateTotalSets,
@@ -31,18 +32,7 @@ export default function WorkoutHistoryCard({
   const totalExercises = calculateTotalExercises(session);
   const totalSets = calculateTotalSets(session);
 
-  const formatDate = (isoStr: string) => {
-    try {
-      const d = new Date(isoStr);
-      return d.toLocaleDateString("en-US", {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-      });
-    } catch {
-      return isoStr;
-    }
-  };
+
 
   const handleDelete = () => {
     Alert.alert(
@@ -70,7 +60,7 @@ export default function WorkoutHistoryCard({
         <View style={styles.titleContainer}>
           <Text style={styles.sessionName}>{session.name}</Text>
           <Text style={styles.sessionDate}>
-            {formatDate(session.completedAt || session.startedAt)}
+            {formatTimestampForDisplay(session.completedAt || session.startedAt)}
           </Text>
         </View>
 

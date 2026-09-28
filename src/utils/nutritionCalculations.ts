@@ -66,6 +66,26 @@ export function estimateCaloriesFromMacros(
 }
 
 /**
+ * Scales macronutrients and calories by a given serving count.
+ */
+export function scaleFoodNutrients(
+  nutrients: MacroNutrients,
+  servings: number,
+): MacroNutrients {
+  const safeServings = sanitizeNumber(servings, 1);
+  return {
+    calories: Math.round(
+      sanitizeNumber(nutrients.calories, 0, true) * safeServings,
+    ),
+    protein:
+      Math.round(sanitizeNumber(nutrients.protein) * safeServings * 10) / 10,
+    carbs:
+      Math.round(sanitizeNumber(nutrients.carbs) * safeServings * 10) / 10,
+    fat: Math.round(sanitizeNumber(nutrients.fat) * safeServings * 10) / 10,
+  };
+}
+
+/**
  * Calculates sum of nutrients across a list of meals.
  */
 export function calculateDailyTotals(meals: MealEntry[]): DailyTotals {
@@ -133,7 +153,18 @@ export function calculatePercentages(
   };
 }
 
-const MEAL_TYPES: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
+export const MEAL_TYPES: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
+
+export const MEAL_TYPE_OPTIONS: {
+  type: MealType;
+  label: string;
+  icon: "sunny-outline" | "restaurant-outline" | "moon-outline" | "nutrition-outline";
+}[] = [
+  { type: "breakfast", label: "Breakfast", icon: "sunny-outline" },
+  { type: "lunch", label: "Lunch", icon: "restaurant-outline" },
+  { type: "dinner", label: "Dinner", icon: "moon-outline" },
+  { type: "snack", label: "Snack", icon: "nutrition-outline" },
+];
 
 /**
  * Groups a day's meals into categories (Breakfast, Lunch, Dinner, Snack) with subtotals.
@@ -292,4 +323,134 @@ export function calculateMacroTargetsFromCalories(
     carbs,
     fat,
   };
+}
+
+/**
+ * Calculates recommended daily water intake (ml) based on body weight:
+ * ~35ml per kg of bodyweight, clamped between 1500ml and 5000ml.
+ */
+export function calculateRecommendedWaterGoal(weightKg: number): number {
+  const w = sanitizeNumber(weightKg, 70);
+  const calculated = Math.round((w * 35) / 50) * 50;
+  return Math.min(5000, Math.max(1500, calculated));
+}
+
+/**
+ * Calculates recommended daily steps based on activity level.
+ */
+export function calculateRecommendedStepGoal(
+  activity: ActivityLevel | string = "moderate",
+): number {
+  switch (activity) {
+    case "sedentary":
+      return 6000;
+    case "light":
+    case "lightly_active":
+      return 8000;
+    case "moderate":
+    case "moderately_active":
+      return 10000;
+    case "heavy":
+    case "very_active":
+    case "very_heavy":
+      return 12000;
+    default:
+      return 10000;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Canonical Profile Options & Validation
+// -----------------------------------------------------------------------------
+
+export const SEX_OPTIONS: { value: Sex; label: string }[] = [
+  { value: "male", label: "Male" },
+  { value: "female", label: "Female" },
+];
+
+export const ACTIVITY_OPTIONS: {
+  value: ActivityLevel;
+  label: string;
+  desc: string;
+  multiplier: number;
+}[] = [
+  {
+    value: "sedentary",
+    label: "Sedentary",
+    desc: "Little to no exercise, desk job",
+    multiplier: 1.2,
+  },
+  {
+    value: "light",
+    label: "Lightly Active",
+    desc: "Light exercise 1–3 days/week",
+    multiplier: 1.375,
+  },
+  {
+    value: "moderate",
+    label: "Moderate",
+    desc: "Moderate exercise 3–5 days/week",
+    multiplier: 1.55,
+  },
+  {
+    value: "heavy",
+    label: "Very Active",
+    desc: "Hard exercise 6–7 days/week",
+    multiplier: 1.725,
+  },
+];
+
+export const GOAL_OPTIONS: {
+  value: PrimaryGoal;
+  label: string;
+  desc: string;
+}[] = [
+  {
+    value: "lose_fat",
+    label: "Lose Fat",
+    desc: "Calorie Deficit",
+  },
+  {
+    value: "maintain",
+    label: "Maintain Weight",
+    desc: "Exact TDEE",
+  },
+  {
+    value: "build_muscle",
+    label: "Build Muscle",
+    desc: "Calorie Surplus",
+  },
+];
+
+export function validateBodyStats(
+  weight: number,
+  height: number,
+  age: number,
+): { valid: boolean; error?: string } {
+  if (weight <= 20 || height <= 50 || age <= 10) {
+    return {
+      valid: false,
+      error: "Please enter valid body stats (age > 10, height > 50 cm, weight > 20 kg).",
+    };
+  }
+  return { valid: true };
+}
+
+export function validateHealthGoals(
+  waterGoal: number,
+  stepGoal: number,
+): { valid: boolean; error?: string } {
+  if (isNaN(waterGoal) || waterGoal < 1000 || waterGoal > 10000) {
+    return {
+      valid: false,
+      error: "Please enter a water goal between 1,000 and 10,000 ml.",
+    };
+  }
+  if (isNaN(stepGoal) || stepGoal < 1000 || stepGoal > 30000) {
+    return {
+      valid: false,
+      error: "Please enter a step goal between 1,000 and 30,000 steps.",
+    };
+  }
+  return { valid: true };
 }

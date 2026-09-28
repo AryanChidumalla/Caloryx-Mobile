@@ -1,6 +1,76 @@
 import { supabase } from "@/lib/supabase";
 import { WorkoutRoutine, WorkoutSession } from "@/types/workout";
 
+export interface SupabaseRoutineExerciseRow {
+  id: string;
+  routine_id?: string;
+  exercise_id?: string | null;
+  exercise_name: string;
+  category?: string | null;
+  order_index?: number;
+  target_sets?: number;
+  sets?: number;
+  target_reps?: string;
+  reps?: number;
+  target_weight_kg?: number;
+  weight?: number;
+  target_duration_seconds?: number;
+  notes?: string | null;
+  created_at?: string;
+}
+
+export interface SupabaseRoutineRow {
+  id: string;
+  user_id: string;
+  name: string;
+  description?: string | null;
+  created_at: string;
+  updated_at: string;
+  routine_exercises?: SupabaseRoutineExerciseRow[];
+}
+
+export interface SupabaseExerciseSetRow {
+  id: string;
+  session_exercise_id?: string;
+  set_number?: number;
+  weight?: number;
+  weight_kg?: number;
+  reps?: number;
+  duration_seconds?: number;
+  completed?: boolean;
+}
+
+export interface SupabaseSessionExerciseRow {
+  id: string;
+  session_id?: string;
+  exercise_id?: string | null;
+  exercise_name?: string;
+  name?: string;
+  category?: string | null;
+  order_index?: number;
+  notes?: string | null;
+  sets?: number;
+  reps?: number;
+  weight?: number;
+  created_at?: string;
+  exercise_sets?: SupabaseExerciseSetRow[];
+}
+
+export interface SupabaseSessionRow {
+  id: string;
+  user_id: string;
+  routine_id?: string | null;
+  name: string;
+  started_at: string;
+  completed_at?: string | null;
+  duration_seconds?: number;
+  total_volume_kg?: number;
+  notes?: string | null;
+  created_at: string;
+  session_exercises?: SupabaseSessionExerciseRow[];
+  exercises?: SupabaseSessionExerciseRow[];
+}
+
 /**
  * Fetches all workout routines and their configured exercises for a user from Supabase.
  */
@@ -27,7 +97,9 @@ export async function fetchUserRoutines(
       return [];
     }
 
-    return routinesData.map((r: any) => ({
+    const typedRoutines = routinesData as unknown as SupabaseRoutineRow[];
+
+    return typedRoutines.map((r) => ({
       id: r.id,
       userId: r.user_id,
       name: r.name,
@@ -37,7 +109,7 @@ export async function fetchUserRoutines(
       isCustom: true,
       exercises: Array.isArray(r.routine_exercises)
         ? r.routine_exercises
-            .sort((a: any, b: any) => {
+            .sort((a, b) => {
               if (a.order_index !== undefined && b.order_index !== undefined) {
                 return a.order_index - b.order_index;
               }
@@ -49,7 +121,7 @@ export async function fetchUserRoutines(
               }
               return 0;
             })
-            .map((re: any, idx: number) => ({
+            .map((re, idx: number) => ({
               id: re.id,
               routineId: re.routine_id,
               exerciseId: re.exercise_id || undefined,
@@ -92,7 +164,7 @@ export async function syncUserRoutine(
   userId: string,
   routine: WorkoutRoutine,
 ): Promise<WorkoutRoutine> {
-  const routinePayload: any = {
+  const routinePayload: Partial<SupabaseRoutineRow> = {
     user_id: userId,
     name: routine.name.trim(),
     description: routine.description?.trim() || null,
@@ -169,7 +241,7 @@ export async function saveUserWorkoutSession(
   userId: string,
   session: WorkoutSession,
 ): Promise<WorkoutSession> {
-  const sessionPayload: any = {
+  const sessionPayload: Partial<SupabaseSessionRow> = {
     user_id: userId,
     routine_id: isUUID(session.routineId) ? session.routineId : null,
     name: session.name,
@@ -272,7 +344,9 @@ export async function fetchUserWorkoutSessions(
       return [];
     }
 
-    return data.map((s: any) => {
+    const typedSessions = data as unknown as SupabaseSessionRow[];
+
+    return typedSessions.map((s) => {
       const rawExercises = s.session_exercises || s.exercises || [];
       return {
         id: s.id,
@@ -287,7 +361,7 @@ export async function fetchUserWorkoutSessions(
         createdAt: s.created_at,
         exercises: Array.isArray(rawExercises)
           ? rawExercises
-              .sort((a: any, b: any) => {
+              .sort((a, b) => {
                 if (a.order_index !== undefined && b.order_index !== undefined) {
                   return a.order_index - b.order_index;
                 }
@@ -299,8 +373,8 @@ export async function fetchUserWorkoutSessions(
                 }
                 return 0;
               })
-              .map((se: any, idx: number) => {
-                const rawSets = se.exercise_sets || se.sets || [];
+              .map((se, idx: number) => {
+                const rawSets = se.exercise_sets || [];
                 return {
                   id: se.id,
                   sessionId: se.session_id,
@@ -312,21 +386,20 @@ export async function fetchUserWorkoutSessions(
                   sets: Array.isArray(rawSets)
                     ? rawSets
                         .sort(
-                          (a: any, b: any) =>
+                          (a, b) =>
                             (a.set_number ?? 0) - (b.set_number ?? 0),
                         )
-                        .map((st: any) => ({
+                        .map((st) => ({
                           id: st.id,
                           sessionExerciseId: st.session_exercise_id,
                           setNumber: st.set_number ?? 1,
-                          setType: st.set_type || "regular",
+                          setType: "regular" as const,
                           weightKg: Number(
-                            st.weight ?? st.weight_kg ?? st.weightKg ?? 0,
+                            st.weight ?? st.weight_kg ?? 0,
                           ),
                           reps: Number(st.reps ?? 0),
                           durationSeconds:
                             st.duration_seconds ??
-                            st.durationSeconds ??
                             undefined,
                           completed:
                             st.completed !== undefined

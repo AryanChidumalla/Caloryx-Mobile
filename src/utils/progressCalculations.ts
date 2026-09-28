@@ -7,7 +7,13 @@ import {
   WeightEntry,
 } from "@/types/health";
 import { MealEntry } from "@/types/nutrition";
-import { getTodayDateString } from "@/utils/date";
+import { getDateRangeList, getTodayDateString, parseLocalDate } from "@/utils/date";
+
+export { getDateRangeList };
+
+export type AggregatedDailyMetrics = ReturnType<typeof aggregateDailyMetrics>;
+export type AggregatedWeightHistory = ReturnType<typeof aggregateWeightHistory>;
+export type AggregatedDailyNutrition = ReturnType<typeof aggregateDailyNutrition>;
 
 /**
  * Returns number of days for a given TimeFilter.
@@ -24,34 +30,11 @@ export function getDaysCountForFilter(filter: TimeFilter): number {
 }
 
 /**
- * Generates an array of date strings (YYYY-MM-DD) from (today - (days - 1)) up to today.
- */
-export function getDateRangeList(days: number): string[] {
-  const dates: string[] = [];
-  const today = new Date();
-
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(today.getDate() - i);
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    dates.push(`${yyyy}-${mm}-${dd}`);
-  }
-
-  return dates;
-}
-
-/**
  * Formats a YYYY-MM-DD date into a compact label based on time filter.
  */
 export function formatDateLabel(dateStr: string, filter: TimeFilter): string {
   try {
-    const parts = dateStr.split("-");
-    const year = parseInt(parts[0], 10);
-    const month = parseInt(parts[1], 10) - 1;
-    const day = parseInt(parts[2], 10);
-    const d = new Date(year, month, day);
+    const d = parseLocalDate(dateStr);
 
     if (filter === "7d") {
       return d.toLocaleDateString("en-US", { weekday: "narrow" }); // "M", "T", "W"

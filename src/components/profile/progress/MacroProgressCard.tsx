@@ -1,6 +1,7 @@
 import { colors } from "@/styles/global";
 import { RangeNutritionSummary } from "@/types/health";
 import { DailyGoals } from "@/types/nutrition";
+import { estimateCaloriesFromMacros } from "@/utils/nutritionCalculations";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
@@ -20,7 +21,11 @@ export default function MacroProgressCard({
   const proteinCals = summary.averageProtein * 4;
   const carbsCals = summary.averageCarbs * 4;
   const fatCals = summary.averageFat * 9;
-  const totalMacroCals = proteinCals + carbsCals + fatCals;
+  const totalMacroCals = estimateCaloriesFromMacros(
+    summary.averageProtein,
+    summary.averageCarbs,
+    summary.averageFat,
+  );
 
   const proteinPct =
     totalMacroCals > 0 ? Math.round((proteinCals / totalMacroCals) * 100) : 0;

@@ -35,6 +35,7 @@ export default function DashboardGreeting({
 
   const getTodayContent = () => {
     const hour = now.getHours();
+    const day = now.getDate();
 
     // 12 AM – 3:59 AM
     if (hour < 4) {
@@ -49,7 +50,7 @@ export default function DashboardGreeting({
         },
       ];
 
-      return messages[Math.floor(Math.random() * messages.length)];
+      return messages[day % messages.length];
     }
 
     // 4 AM – 6:59 AM
@@ -65,7 +66,7 @@ export default function DashboardGreeting({
         },
       ];
 
-      return messages[Math.floor(Math.random() * messages.length)];
+      return messages[day % messages.length];
     }
 
     // 7 AM – 11:59 AM
@@ -97,7 +98,7 @@ export default function DashboardGreeting({
         },
       ];
 
-      return messages[Math.floor(Math.random() * messages.length)];
+      return messages[day % messages.length];
     }
 
     // 5 PM – 7:59 PM
@@ -113,14 +114,6 @@ export default function DashboardGreeting({
       title: "The day's nearly over.",
       subtitle: "Anything left on the list?",
     };
-  };
-
-  const formatSelectedDate = () => {
-    return selected.toLocaleDateString("en-US", {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-    });
   };
 
   const getFutureContent = () => {

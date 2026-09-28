@@ -3,10 +3,13 @@ import type {
   ExerciseSet,
   RoutineExercise,
   SessionExercise,
+  SessionMetadataUpdates,
   WorkoutRoutine,
   WorkoutSession,
 } from "@/types/workout";
 import { calculateWorkoutVolume } from "./workoutCalculations";
+
+export type { SessionMetadataUpdates };
 
 /**
  * Creates an active WorkoutSession from a WorkoutRoutine template.
@@ -471,13 +474,6 @@ export function updateRoutineExercise(
   };
 }
 
-export type SessionMetadataUpdates = {
-  name?: string;
-  startedAt?: string;
-  completedAt?: string;
-  durationSeconds?: number;
-  notes?: string | null;
-};
 
 /**
  * Builds an ISO string from local calendar date components and time components,

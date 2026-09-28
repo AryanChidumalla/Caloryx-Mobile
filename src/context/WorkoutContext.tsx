@@ -104,6 +104,13 @@ type WorkoutContextType = {
 
   selectedRoutineExercise: Exercise | null;
   setSelectedRoutineExercise: (exercise: Exercise | null) => void;
+  selectedExerciseForEdit: {
+    exercise: Exercise;
+    replacingIndex?: number | null;
+  } | null;
+  setSelectedExerciseForEdit: (
+    val: { exercise: Exercise; replacingIndex?: number | null } | null,
+  ) => void;
 };
 
 const WorkoutContext = createContext<WorkoutContextType | undefined>(undefined);
@@ -126,6 +133,10 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedRoutineExercise, setSelectedRoutineExercise] =
     useState<Exercise | null>(null);
+  const [selectedExerciseForEdit, setSelectedExerciseForEdit] = useState<{
+    exercise: Exercise;
+    replacingIndex?: number | null;
+  } | null>(null);
 
   // Active workout state
   const [activeWorkout, setActiveWorkout] = useState<WorkoutSession | null>(
@@ -525,6 +536,8 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
       refreshWorkouts,
       selectedRoutineExercise,
       setSelectedRoutineExercise,
+      selectedExerciseForEdit,
+      setSelectedExerciseForEdit,
     }),
     [
       routines,
@@ -561,6 +574,8 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
       refreshWorkouts,
       selectedRoutineExercise,
       setSelectedRoutineExercise,
+      selectedExerciseForEdit,
+      setSelectedExerciseForEdit,
     ],
   );
 

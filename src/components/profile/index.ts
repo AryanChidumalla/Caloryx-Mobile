@@ -17,3 +17,5 @@ export { default as WaterProgressChart } from "./progress/WaterProgressChart";
 export { default as WeightProgressChart } from "./progress/WeightProgressChart";
 
 export { default as ProfileHistory } from "./history/ProfileHistory";
+
+export * from "./goals";

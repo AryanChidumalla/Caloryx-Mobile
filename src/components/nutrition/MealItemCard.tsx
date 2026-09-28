@@ -34,12 +34,9 @@ export default function MealItemCard({
     );
   };
 
-  const hasServingDetail =
-    (meal.servings && meal.servings !== 1) || meal.servingSize;
-
-  const servingLabel = [
-    meal.servings && meal.servings !== 1 ? `${meal.servings}x` : "",
-    meal.servingSize || "",
+  const servingInfo = [
+    meal.servings && meal.servings !== 1 ? `${meal.servings} servings` : null,
+    meal.servingSize || null,
   ]
     .filter(Boolean)
     .join(" • ");
@@ -54,21 +51,21 @@ export default function MealItemCard({
       onLongPress={handleLongPress}
       activeOpacity={0.7}
     >
-      <View style={styles.content}>
+      <View>
         <View style={styles.topRow}>
           <Text style={styles.name} numberOfLines={1}>
             {meal.name}
           </Text>
-          <View style={styles.calorieBadge}>
+          <View>
             <Text style={styles.calorieText}>{meal.calories} kcal</Text>
           </View>
         </View>
 
-        {/* {hasServingDetail ? (
+        {servingInfo ? (
           <Text style={styles.servingText} numberOfLines={1}>
-            {servingLabel}
+            {servingInfo}
           </Text>
-        ) : null} */}
+        ) : null}
 
         <View style={styles.bottomRow}>
           <Text style={styles.macroText}>
@@ -78,11 +75,6 @@ export default function MealItemCard({
               fat: meal.fat,
             })}
           </Text>
-          {/* <Ionicons
-            name="chevron-forward"
-            size={14}
-            color={colors.textSecondary}
-          /> */}
         </View>
       </View>
     </TouchableOpacity>
@@ -94,14 +86,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceLight,
     borderRadius: 8,
     padding: 12,
-    // paddingBottom: 8,
-    // paddingTop: 8,
-    // marginBottom: 8,
-    // borderWidth: 1,
-    // borderColor: "rgba(255, 255, 255, 0.05)",
-  },
-  content: {
-    // gap: 4,
   },
   topRow: {
     flexDirection: "row",
@@ -115,26 +99,22 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 48,
   },
-  calorieBadge: {
-    // backgroundColor: colors.caloriesMuted,
-    // paddingHorizontal: 12,
-    // paddingVertical: 4,
-    // borderRadius: 8,
-  },
   calorieText: {
     fontSize: 14,
     fontWeight: "700",
     color: colors.calories,
   },
   servingText: {
-    fontSize: 12,
+    fontSize: 11,
     color: colors.textMuted,
+    marginTop: 2,
+    marginBottom: 4,
   },
   bottomRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    // marginTop: 2,
+    marginTop: 2,
   },
   macroText: {
     fontSize: 12,

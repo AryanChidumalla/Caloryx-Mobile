@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import {
+  ActivityIndicator,
   StyleSheet,
   Switch,
   Text,
@@ -11,8 +12,7 @@ import {
 
 import { colors } from "@/styles/global";
 import { MealType } from "@/types/nutrition";
-
-type ActiveTab = "search" | "manual" | "saved";
+import { MEAL_TYPE_OPTIONS } from "@/utils/nutritionCalculations";
 
 type MealFormProps = {
   editingMeal: boolean;
@@ -45,36 +45,10 @@ type MealFormProps = {
   setSaveToFavorites: (value: boolean) => void;
 
   onEstimateCalories: () => void;
+  isSubmitting?: boolean;
   onSubmit: () => void;
   onDelete: () => void;
 };
-
-const MEAL_TYPES: {
-  type: MealType;
-  label: string;
-  icon: keyof typeof Ionicons.glyphMap;
-}[] = [
-  {
-    type: "breakfast",
-    label: "Breakfast",
-    icon: "sunny-outline",
-  },
-  {
-    type: "lunch",
-    label: "Lunch",
-    icon: "restaurant-outline",
-  },
-  {
-    type: "dinner",
-    label: "Dinner",
-    icon: "moon-outline",
-  },
-  {
-    type: "snack",
-    label: "Snack",
-    icon: "nutrition-outline",
-  },
-];
 
 export default function MealForm({
   editingMeal,
@@ -97,6 +71,7 @@ export default function MealForm({
   saveToFavorites,
   setSaveToFavorites,
   onEstimateCalories,
+  isSubmitting = false,
   onSubmit,
   onDelete,
 }: MealFormProps) {
@@ -107,7 +82,7 @@ export default function MealForm({
         <Text style={styles.fieldLabel}>Meal Category</Text>
 
         <View style={styles.mealTypeRow}>
-          {MEAL_TYPES.map((item) => {
+          {MEAL_TYPE_OPTIONS.map((item) => {
             const isSelected = mealType === item.type;
 
             return (
@@ -299,13 +274,21 @@ export default function MealForm({
 
       {/* Submit */}
       <TouchableOpacity
-        style={styles.submitButton}
+        style={[
+          styles.submitButton,
+          isSubmitting && styles.submitButtonDisabled,
+        ]}
         onPress={onSubmit}
+        disabled={isSubmitting}
         activeOpacity={0.8}
       >
-        <Text style={styles.submitButtonText}>
-          {editingMeal ? "Save Changes" : "Log Meal"}
-        </Text>
+        {isSubmitting ? (
+          <ActivityIndicator size="small" color={colors.background} />
+        ) : (
+          <Text style={styles.submitButtonText}>
+            {editingMeal ? "Save Changes" : "Log Meal"}
+          </Text>
+        )}
       </TouchableOpacity>
 
       {/* Delete */}
@@ -469,6 +452,10 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: "center",
     marginTop: 4,
+  },
+
+  submitButtonDisabled: {
+    opacity: 0.6,
   },
 
   submitButtonText: {

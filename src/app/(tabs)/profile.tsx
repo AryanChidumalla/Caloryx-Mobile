@@ -4,7 +4,6 @@ import {
   ProfileOverview,
   ProfileProgress,
 } from "@/components/profile";
-import EditWorkoutModal from "@/components/workout/history/EditWorkoutModal";
 import { useAuth } from "@/context/AuthContext";
 import { useHealth } from "@/context/HealthContext";
 import { useNutrition } from "@/context/NutritionContext";
@@ -13,7 +12,6 @@ import { getGuestProfile } from "@/storage/nutritionStorage";
 import { colors, globalStyles } from "@/styles/global";
 import { TimeFilter } from "@/types/health";
 import { PrimaryGoal } from "@/types/nutrition";
-import { WorkoutSession } from "@/types/workout";
 import { formatDateForDisplay, isToday } from "@/utils/date";
 import {
   aggregateDailyMetrics,
@@ -24,6 +22,7 @@ import {
 } from "@/utils/progressCalculations";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   RefreshControl,
@@ -39,8 +38,9 @@ type ProfileViewTab = "overview" | "progress" | "history";
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
 
-  const { profile, session, mode } = useAuth();
+  const { profile, session, mode, refreshProfile } = useAuth();
   const { meals, goals, refreshAll } = useNutrition();
 
   const {
@@ -55,7 +55,6 @@ export default function ProfileScreen() {
   const {
     sessions: workoutSessions,
     deleteSession,
-    updateSession,
     refreshWorkouts,
   } = useWorkout();
 
@@ -63,12 +62,7 @@ export default function ProfileScreen() {
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("7d");
   const [refreshing, setRefreshing] = useState(false);
 
-  const [guestGoal, setGuestGoal] = useState<PrimaryGoal>("maintain");
-  const [guestDeficit, setGuestDeficit] = useState(400);
-
-  const [editingWorkout, setEditingWorkout] = useState<WorkoutSession | null>(
-    null,
-  );
+  const [calorieAdjustment, setCalorieAdjustment] = useState(400);
 
   const isGuest = mode === "guest";
 
@@ -77,13 +71,8 @@ export default function ProfileScreen() {
       if (!isGuest) return;
 
       const guestData = await getGuestProfile();
-
-      if (guestData?.goal) {
-        setGuestGoal(guestData.goal);
-      }
-
       if (guestData?.calorieAdjustment) {
-        setGuestDeficit(guestData.calorieAdjustment);
+        setCalorieAdjustment(guestData.calorieAdjustment);
       }
     }
 
@@ -94,7 +83,12 @@ export default function ProfileScreen() {
     setRefreshing(true);
 
     try {
-      await Promise.all([refreshAll(), refreshHealth(), refreshWorkouts()]);
+      await Promise.all([
+        refreshProfile(),
+        refreshAll(),
+        refreshHealth(),
+        refreshWorkouts(),
+      ]);
     } finally {
       setRefreshing(false);
     }
@@ -111,16 +105,9 @@ export default function ProfileScreen() {
 
   const currentWeight = Number(profile?.weight) || 70;
 
-  /*
-   * Guest users have a locally stored primary goal.
-   * Authenticated goal persistence is handled separately and
-   * should be fixed in the profile/goals data layer.
-   */
-  const currentGoal: PrimaryGoal = isGuest
-    ? guestGoal
-    : (profile?.activity_level as PrimaryGoal) || "maintain";
+  const currentGoal: PrimaryGoal = profile?.primary_goal || "maintain";
 
-  const deficitOrSurplus = isGuest ? guestDeficit : 400;
+  const deficitOrSurplus = calorieAdjustment;
 
   const daysCount = getDaysCountForFilter(timeFilter);
 
@@ -318,7 +305,12 @@ export default function ProfileScreen() {
           <ProfileHistory
             workoutSessions={workoutSessions}
             deleteSession={deleteSession}
-            setEditingWorkout={setEditingWorkout}
+            setEditingWorkout={(s) =>
+              router.push({
+                pathname: "/workout/edit/[id]",
+                params: { id: String(s.id) },
+              })
+            }
             recentDays={recentDays}
             activityHistory={activityHistory}
             waterHistory={waterHistory}
@@ -329,15 +321,6 @@ export default function ProfileScreen() {
           />
         )}
       </ScrollView>
-
-      <EditWorkoutModal
-        visible={!!editingWorkout}
-        session={editingWorkout}
-        onClose={() => setEditingWorkout(null)}
-        onSave={async (updated) => {
-          await updateSession(updated);
-        }}
-      />
     </View>
   );
 }

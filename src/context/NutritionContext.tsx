@@ -115,8 +115,7 @@ export function NutritionProvider({ children }: { children: React.ReactNode }) {
   const [preselectedMealType, setPreselectedMealType] =
     useState<MealType>("breakfast");
 
-  const refreshAll = useCallback(async () => {
-    setIsLoading(true);
+  const fetchNutritionData = useCallback(async () => {
     try {
       if (mode === "authenticated" && userId) {
         // Authenticated user: Load from Supabase
@@ -158,8 +157,24 @@ export function NutritionProvider({ children }: { children: React.ReactNode }) {
   }, [mode, userId, profile]);
 
   useEffect(() => {
-    refreshAll();
-  }, [refreshAll]);
+    let isCancelled = false;
+
+    const timer = setTimeout(() => {
+      if (!isCancelled) {
+        fetchNutritionData();
+      }
+    }, 0);
+
+    return () => {
+      isCancelled = true;
+      clearTimeout(timer);
+    };
+  }, [fetchNutritionData]);
+
+  const refreshAll = useCallback(async () => {
+    setIsLoading(true);
+    await fetchNutritionData();
+  }, [fetchNutritionData]);
 
   // Date Navigation
   const goToToday = useCallback(() => {
@@ -205,10 +220,21 @@ export function NutritionProvider({ children }: { children: React.ReactNode }) {
       let newMeal: MealEntry;
 
       if (mode === "authenticated" && userId) {
-        newMeal = await insertFoodLog(userId, {
-          ...mealData,
-          date: targetDate,
-        });
+        try {
+          newMeal = await insertFoodLog(userId, {
+            ...mealData,
+            date: targetDate,
+          });
+        } catch (networkErr) {
+          console.warn(
+            "Failed to insert food log to Supabase, falling back to local storage:",
+            networkErr,
+          );
+          newMeal = await addMealStorage({
+            ...mealData,
+            date: targetDate,
+          });
+        }
       } else {
         newMeal = await addMealStorage({
           ...mealData,
@@ -227,7 +253,15 @@ export function NutritionProvider({ children }: { children: React.ReactNode }) {
       let updated: MealEntry;
 
       if (mode === "authenticated" && userId) {
-        updated = await updateFoodLog(userId, mealData);
+        try {
+          updated = await updateFoodLog(userId, mealData);
+        } catch (networkErr) {
+          console.warn(
+            "Failed to update food log in Supabase, falling back to local storage:",
+            networkErr,
+          );
+          updated = await updateMealStorage(mealData);
+        }
       } else {
         updated = await updateMealStorage(mealData);
       }
@@ -244,7 +278,15 @@ export function NutritionProvider({ children }: { children: React.ReactNode }) {
   const deleteMealEntry = useCallback(
     async (id: string): Promise<void> => {
       if (mode === "authenticated" && userId) {
-        await deleteFoodLog(userId, id);
+        try {
+          await deleteFoodLog(userId, id);
+        } catch (networkErr) {
+          console.warn(
+            "Failed to delete food log in Supabase, falling back to local storage:",
+            networkErr,
+          );
+          await deleteMealStorage(id);
+        }
       } else {
         await deleteMealStorage(id);
       }
@@ -272,19 +314,8 @@ export function NutritionProvider({ children }: { children: React.ReactNode }) {
     async (newGoals: DailyGoals): Promise<void> => {
       const saved = await updateGoalsStorage(newGoals);
       setGoals(saved);
-
-      // if (mode === "authenticated" && userId) {
-      //   try {
-      //     await upsertUserProfile({
-      //       id: userId,
-      //       target_calorie: saved.calories,
-      //     });
-      //   } catch (err) {
-      //     console.warn("Failed to sync target_calorie to Supabase profile:", err);
-      //   }
-      // }
     },
-    [mode, userId],
+    [],
   );
 
   // Saved Foods Actions

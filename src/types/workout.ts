@@ -96,3 +96,18 @@ export type ActiveWorkoutState = {
   elapsedSeconds: number;
   isPaused: boolean;
 };
+
+export type SessionMetadataUpdates = {
+  name?: string;
+  notes?: string;
+  durationSeconds?: number;
+  startedAt?: string;
+  completedAt?: string;
+};
+
+export type MuscleDistribution = {
+  muscle: string;
+  count: number;
+  percentage: number;
+  exercises: string[];
+};

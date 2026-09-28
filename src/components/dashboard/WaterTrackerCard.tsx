@@ -1,6 +1,10 @@
 import { useHealth } from "@/context/HealthContext";
 import { colors } from "@/styles/global";
 import { isToday } from "@/utils/date";
+import {
+  calculateWaterProgress,
+  formatWaterAmount,
+} from "@/utils/healthCalculations";
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
@@ -18,25 +22,8 @@ export default function WaterTrackerCard({ date }: WaterTrackerCardProps) {
     ? (waterHistory[date] ?? (isTodayDate ? waterIntake : 0))
     : waterIntake;
 
-  const progressRatio = Math.min(
-    1,
-    waterGoal > 0 ? currentIntake / waterGoal : 0,
-  );
-
-  const progressPercent = Math.round(progressRatio * 100);
-
-  const remainingMl = Math.max(0, waterGoal - currentIntake);
-
-  const isGoalReached = waterGoal > 0 && currentIntake >= waterGoal;
-
-  const formatAmount = (ml: number) => {
-    if (ml >= 1000) {
-      const liters = ml / 1000;
-      return `${Number(liters.toFixed(2))} L`;
-    }
-
-    return `${ml} ml`;
-  };
+  const { progressPercent, remainingMl, isGoalReached } =
+    calculateWaterProgress(currentIntake, waterGoal);
 
   return (
     <View style={styles.card}>
@@ -92,11 +79,11 @@ export default function WaterTrackerCard({ date }: WaterTrackerCardProps) {
         <View style={styles.amountRow}>
           <View style={styles.amountValueContainer}>
             <Text style={styles.amountValue}>
-              {formatAmount(currentIntake)}
+              {formatWaterAmount(currentIntake)}
             </Text>
           </View>
 
-          <Text style={styles.amountGoal}>/ {formatAmount(waterGoal)}</Text>
+          <Text style={styles.amountGoal}>/ {formatWaterAmount(waterGoal)}</Text>
         </View>
 
         <Text
@@ -107,7 +94,7 @@ export default function WaterTrackerCard({ date }: WaterTrackerCardProps) {
         >
           {isGoalReached
             ? "You've reached your daily target"
-            : `${formatAmount(remainingMl)} remaining`}
+            : `${formatWaterAmount(remainingMl)} remaining`}
         </Text>
       </View>
 

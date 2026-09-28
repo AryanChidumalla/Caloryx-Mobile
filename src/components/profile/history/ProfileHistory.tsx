@@ -1,16 +1,18 @@
 import { colors } from "@/styles/global";
+import { DailyActivity } from "@/types/health";
+import { WorkoutSession } from "@/types/workout";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import WorkoutHistoryCard from "../../workout/history/WorkoutHistoryCard";
 
 type ProfileHistoryProps = {
-  workoutSessions: any[];
+  workoutSessions: WorkoutSession[];
   deleteSession: (id: string) => void;
-  setEditingWorkout: (session: any) => void;
+  setEditingWorkout: (session: WorkoutSession) => void;
   recentDays: string[];
-  activityHistory: any;
-  waterHistory: any;
+  activityHistory: Record<string, DailyActivity>;
+  waterHistory: Record<string, number>;
   isToday: (date: string) => boolean;
   formatDateForDisplay: (date: string) => string;
   stepGoal: number;

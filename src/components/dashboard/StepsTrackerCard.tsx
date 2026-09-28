@@ -1,27 +1,27 @@
+import StepsMetricsRow from "@/components/dashboard/steps/StepsMetricsRow";
+import StepsProgressRing from "@/components/dashboard/steps/StepsProgressRing";
 import { useHealth } from "@/context/HealthContext";
 import { colors } from "@/styles/global";
 import { formatDateForDisplay, isToday } from "@/utils/date";
+import {
+  calculateStepProgress,
+  estimateCaloriesBurned,
+  estimateDistanceMeters,
+} from "@/utils/healthCalculations";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import {
   ActivityIndicator,
-  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import Svg, { Circle, Defs, LinearGradient, Stop } from "react-native-svg";
 
-type StepsTrackerCardProps = {
+export type StepsTrackerCardProps = {
   date?: string;
 };
-
-const RING_SIZE = 190;
-const RING_STROKE = 13;
-const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2;
-const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
 export default function StepsTrackerCard({ date }: StepsTrackerCardProps) {
   const {
@@ -32,62 +32,32 @@ export default function StepsTrackerCard({ date }: StepsTrackerCardProps) {
     activityHistory,
     healthStatus,
     isConnectingHealth,
+    connectHealthConnect,
     refreshSteps,
   } = useHealth();
 
   const isTodayDate = !date || isToday(date);
 
-  /*
-   * -----------------------------------------
-   * Date-specific values
-   * -----------------------------------------
-   */
-
+  // Date-specific values (source of truth from activityHistory or today's active values)
   const stepsForDate = date
     ? (activityHistory[date]?.stepCount ?? (isTodayDate ? todaySteps : 0))
     : todaySteps;
 
   const distMeters = date
     ? (activityHistory[date]?.distanceMeters ??
-      (isTodayDate ? distanceMeters : Math.round(stepsForDate * 0.762)))
+      (isTodayDate ? distanceMeters : estimateDistanceMeters(stepsForDate)))
     : distanceMeters;
 
   const calsBurned = date
     ? (activityHistory[date]?.caloriesBurned ??
-      (isTodayDate ? caloriesBurned : Math.round(stepsForDate * 0.04)))
+      (isTodayDate ? caloriesBurned : estimateCaloriesBurned(stepsForDate)))
     : caloriesBurned;
 
-  /*
-   * -----------------------------------------
-   * Progress
-   * -----------------------------------------
-   */
-
-  const progressRatio = useMemo(() => {
-    if (stepGoal <= 0) return 0;
-
-    return Math.min(1, stepsForDate / stepGoal);
-  }, [stepsForDate, stepGoal]);
-
-  const progressPercent = Math.round(progressRatio * 100);
-
-  const isGoalReached = stepGoal > 0 && stepsForDate >= stepGoal;
-
-  /*
-   * -----------------------------------------
-   * Display values
-   * -----------------------------------------
-   */
-
-  const kmDistance = (distMeters / 1000).toFixed(1);
-
-  const remainingSteps = Math.max(0, stepGoal - stepsForDate);
-
-  /*
-   * -----------------------------------------
-   * Activity message
-   * -----------------------------------------
-   */
+  const { progressRatio, progressPercent, remainingSteps, isGoalReached } =
+    useMemo(
+      () => calculateStepProgress(stepsForDate, stepGoal),
+      [stepsForDate, stepGoal],
+    );
 
   const activityMessage = useMemo(() => {
     if (isGoalReached) {
@@ -101,7 +71,7 @@ export default function StepsTrackerCard({ date }: StepsTrackerCardProps) {
     if (remainingSteps <= 2000 && remainingSteps > 0) {
       return {
         icon: "arrow-up-circle" as const,
-        text: `${remainingSteps.toLocaleString()} steps to goal`,
+        text: `${remainingSteps.toLocaleString()} to goal`,
         color: "#A78BFA",
       };
     }
@@ -116,201 +86,94 @@ export default function StepsTrackerCard({ date }: StepsTrackerCardProps) {
 
     return {
       icon: "trending-up-outline" as const,
-      text: `${progressPercent}% of daily goal`,
+      text: `${progressPercent}% of goal`,
       color: colors.textSecondary,
     };
   }, [isGoalReached, remainingSteps, stepsForDate, progressPercent]);
 
-  /*
-   * -----------------------------------------
-   * Ring
-   * -----------------------------------------
-   */
-
-  const ringColor = isGoalReached ? colors.success : "#A78BFA";
-
-  const ringOffset = RING_CIRCUMFERENCE * (1 - progressRatio);
-
-  /*
-   * -----------------------------------------
-   * Sync
-   * -----------------------------------------
-   */
-
-  const handleSync = async () => {
+  const handleAction = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
-    await refreshSteps();
+    if (!healthStatus.isConnected) {
+      await connectHealthConnect();
+    } else {
+      await refreshSteps();
+    }
   };
 
-  /*
-   * -----------------------------------------
-   * Render
-   * -----------------------------------------
-   */
+  const getSubtitle = () => {
+    if (!isTodayDate) {
+      return `Activity on ${formatDateForDisplay(date)}`;
+    }
+    if (healthStatus.isConnected) {
+      return healthStatus.source === "health_connect"
+        ? "Synced via Health Connect"
+        : "Tracking via Pedometer";
+    }
+    if (healthStatus.isDenied) {
+      return "Step permissions denied • Tap to retry";
+    }
+    if (!healthStatus.isAvailable) {
+      return "Step tracking unavailable on device";
+    }
+    return "Tap to connect step tracking";
+  };
 
   return (
     <View style={styles.card}>
       {/* Header */}
       <View style={styles.header}>
-        <View>
+        <View style={styles.headerTextContainer}>
           <Text style={styles.title}>Daily Activity</Text>
-
-          <Text style={styles.subtitle}>
-            {isTodayDate
-              ? healthStatus.isConnected
-                ? "Synced via Health Connect"
-                : Platform.OS === "android"
-                  ? "Health Connect ready"
-                  : "Today's movement"
-              : `Activity on ${formatDateForDisplay(date)}`}
+          <Text style={styles.subtitle} numberOfLines={1}>
+            {getSubtitle()}
           </Text>
         </View>
 
         {isTodayDate && (
           <TouchableOpacity
-            style={styles.syncButton}
-            onPress={handleSync}
-            disabled={isConnectingHealth}
+            style={[
+              styles.actionButton,
+              !healthStatus.isConnected && styles.connectButton,
+            ]}
+            onPress={handleAction}
+            disabled={isConnectingHealth || !healthStatus.isAvailable}
             activeOpacity={0.7}
           >
             {isConnectingHealth ? (
               <ActivityIndicator size="small" color="#A78BFA" />
+            ) : !healthStatus.isConnected ? (
+              <View style={styles.connectButtonContent}>
+                <Ionicons name="link-outline" size={14} color="#A78BFA" />
+                <Text style={styles.connectButtonText}>Connect</Text>
+              </View>
             ) : (
-              <Ionicons
-                name={
-                  healthStatus.isConnected ? "sync-outline" : "link-outline"
-                }
-                size={17}
-                color="#A78BFA"
-              />
+              <Ionicons name="sync-outline" size={17} color="#A78BFA" />
             )}
           </TouchableOpacity>
         )}
       </View>
 
-      {/* Circular Progress */}
-      <View style={styles.ringContainer}>
-        <Svg
-          width={RING_SIZE}
-          height={RING_SIZE}
-          viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
-        >
-          <Defs>
-            <LinearGradient
-              id="activityGradient"
-              x1="0%"
-              y1="0%"
-              x2="100%"
-              y2="100%"
-            >
-              <Stop offset="0%" stopColor="#A78BFA" />
-              <Stop offset="100%" stopColor="#8B5CF6" />
-            </LinearGradient>
-          </Defs>
+      {/* Circular Progress Ring */}
+      <StepsProgressRing
+        steps={stepsForDate}
+        progressRatio={progressRatio}
+        activityMessage={activityMessage}
+      />
 
-          {/* Background Ring */}
-          <Circle
-            stroke={colors.surfaceLight}
-            fill="none"
-            cx={RING_SIZE / 2}
-            cy={RING_SIZE / 2}
-            r={RING_RADIUS}
-            strokeWidth={RING_STROKE}
-          />
-
-          {/* Progress Ring */}
-          <Circle
-            stroke={isGoalReached ? colors.success : "url(#activityGradient)"}
-            fill="none"
-            cx={RING_SIZE / 2}
-            cy={RING_SIZE / 2}
-            r={RING_RADIUS}
-            strokeWidth={RING_STROKE}
-            strokeLinecap="round"
-            strokeDasharray={`${RING_CIRCUMFERENCE} ${RING_CIRCUMFERENCE}`}
-            strokeDashoffset={ringOffset}
-            rotation="-90"
-            origin={`${RING_SIZE / 2}, ${RING_SIZE / 2}`}
-          />
-        </Svg>
-
-        {/* Ring Center */}
-        <View style={styles.ringCenter}>
-          <Text style={styles.stepValue}>{stepsForDate.toLocaleString()}</Text>
-
-          <Text style={styles.stepLabel}>STEPS</Text>
-        </View>
-      </View>
-
-      {/* Goal */}
-      <View style={styles.goalContainer}>
-        <Text style={styles.goalPercent}>{progressPercent}%</Text>
-
-        <Text style={styles.goalText}>of {stepGoal.toLocaleString()} goal</Text>
-      </View>
-
-      {/* Activity Status */}
-      <View style={styles.statusRow}>
-        <Ionicons
-          name={activityMessage.icon}
-          size={15}
-          color={activityMessage.color}
-        />
-
-        <Text
-          style={[
-            styles.statusText,
-            {
-              color: activityMessage.color,
-            },
-          ]}
-        >
-          {activityMessage.text}
+      {/* Goal Summary Line */}
+      <View style={styles.goalRow}>
+        <Text style={styles.goalPercentText}>{progressPercent}%</Text>
+        <Text style={styles.goalTargetText}>
+          of {stepGoal.toLocaleString()} daily target
         </Text>
       </View>
 
-      {/* Divider */}
-      <View style={styles.divider} />
-
-      {/* Supporting Metrics */}
-      <View style={styles.metricsRow}>
-        <View style={styles.metric}>
-          <View style={styles.metricIcon}>
-            <Ionicons
-              name="map-outline"
-              size={16}
-              color={colors.textSecondary}
-            />
-          </View>
-
-          <View>
-            <Text style={styles.metricValue}>{kmDistance} km</Text>
-
-            <Text style={styles.metricLabel}>Distance</Text>
-          </View>
-        </View>
-
-        <View style={styles.metricDivider} />
-
-        <View style={styles.metric}>
-          <View style={styles.metricIcon}>
-            <Ionicons
-              name="flame-outline"
-              size={16}
-              color={colors.textSecondary}
-            />
-          </View>
-
-          <View>
-            <Text style={styles.metricValue}>
-              {calsBurned.toLocaleString()} kcal
-            </Text>
-
-            <Text style={styles.metricLabel}>Active calories</Text>
-          </View>
-        </View>
-      </View>
+      {/* Metrics 3-column row */}
+      <StepsMetricsRow
+        distanceMeters={distMeters}
+        caloriesBurned={calsBurned}
+        stepGoal={stepGoal}
+      />
     </View>
   );
 }
@@ -322,35 +185,31 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 18,
     paddingBottom: 18,
     marginBottom: 16,
   },
-
-  /*
-   * Header
-   */
-
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
-
+  headerTextContainer: {
+    flex: 1,
+    marginRight: 10,
+  },
   title: {
     fontSize: 17,
     fontWeight: "800",
     color: colors.text,
     letterSpacing: -0.3,
   },
-
   subtitle: {
     fontSize: 12,
     color: colors.textSecondary,
-    marginTop: 3,
+    marginTop: 2,
   },
-
-  syncButton: {
+  actionButton: {
     width: 36,
     height: 36,
     borderRadius: 12,
@@ -358,136 +217,36 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "rgba(167, 139, 250, 0.10)",
   },
-
-  /*
-   * Ring
-   */
-
-  ringContainer: {
-    width: RING_SIZE,
-    height: RING_SIZE,
-    alignSelf: "center",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 18,
+  connectButton: {
+    width: "auto",
+    paddingHorizontal: 10,
   },
-
-  ringCenter: {
-    position: "absolute",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  stepValue: {
-    fontSize: 34,
-    lineHeight: 38,
-    fontWeight: "800",
-    color: colors.text,
-    letterSpacing: -1,
-  },
-
-  stepLabel: {
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 1.5,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-
-  /*
-   * Goal
-   */
-
-  goalContainer: {
+  connectButtonContent: {
     flexDirection: "row",
-    alignItems: "baseline",
-    justifyContent: "center",
-    marginTop: 4,
+    alignItems: "center",
+    gap: 4,
   },
-
-  goalPercent: {
+  connectButtonText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#A78BFA",
+  },
+  goalRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    marginTop: -4,
+    marginBottom: 12,
+  },
+  goalPercentText: {
     fontSize: 14,
     fontWeight: "800",
-    color: colors.text,
+    color: "#A78BFA",
   },
-
-  goalText: {
+  goalTargetText: {
     fontSize: 12,
     fontWeight: "500",
     color: colors.textSecondary,
-    marginLeft: 4,
-  },
-
-  /*
-   * Status
-   */
-
-  statusRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 5,
-    marginTop: 10,
-  },
-
-  statusText: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
-
-  /*
-   * Divider
-   */
-
-  divider: {
-    height: 1,
-    backgroundColor: colors.surfaceBorder,
-    marginTop: 18,
-    marginBottom: 16,
-  },
-
-  /*
-   * Metrics
-   */
-
-  metricsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  metric: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
-
-  metricIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.surfaceLight,
-  },
-
-  metricValue: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: colors.text,
-  },
-
-  metricLabel: {
-    fontSize: 10,
-    fontWeight: "500",
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-
-  metricDivider: {
-    width: 1,
-    height: 32,
-    backgroundColor: colors.surfaceBorder,
   },
 });

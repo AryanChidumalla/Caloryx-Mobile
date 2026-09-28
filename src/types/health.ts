@@ -7,6 +7,20 @@ export type WaterLog = {
   updatedAt?: string;
 };
 
+export type SleepQuality = "optimal" | "good" | "fair" | "short";
+
+export type SleepLog = {
+  id?: string;
+  userId?: string;
+  date: string; // YYYY-MM-DD
+  durationMinutes: number;
+  goalMinutes: number;
+  quality?: SleepQuality;
+  notes?: string;
+  source?: "manual" | "health_connect" | "apple_health";
+  updatedAt?: string;
+};
+
 export type DailyActivity = {
   id?: string;
   userId?: string;
@@ -18,11 +32,20 @@ export type DailyActivity = {
   updatedAt?: string;
 };
 
+export type StepTrackingSource =
+  | "health_connect"
+  | "pedometer"
+  | "manual"
+  | "none";
+
 export type HealthConnectStatus = {
+  source: StepTrackingSource;
   isAvailable: boolean;
   isConnected: boolean;
   hasPermission: boolean;
+  isDenied?: boolean;
   lastCheckedAt: string;
+  error?: string | null;
 };
 
 export type TimeFilter = "7d" | "30d" | "90d";

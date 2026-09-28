@@ -1,80 +1,9 @@
+import MacroProgressItem from "@/components/nutrition/MacroProgressItem";
 import { useNutrition } from "@/context/NutritionContext";
 import { colors } from "@/styles/global";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-
-type MacroItemProps = {
-  label: string;
-  consumed: number;
-  goal: number;
-  remaining: number;
-  isExceeded: boolean;
-  percentage: number;
-  color: string;
-};
-
-function MacroItem({
-  label,
-  consumed,
-  goal,
-  remaining,
-  isExceeded,
-  percentage,
-  color,
-}: MacroItemProps) {
-  const progressPercent = Math.min(100, Math.max(0, percentage));
-
-  return (
-    <View style={styles.macroItem}>
-      {/* Macro header */}
-      <View style={styles.macroHeader}>
-        <View style={styles.macroLabel}>
-          <View
-            style={[
-              styles.colorDot,
-              { backgroundColor: isExceeded ? colors.alert : color },
-            ]}
-          />
-
-          <Text style={styles.macroName}>{label}</Text>
-        </View>
-
-        <Text
-          style={[
-            styles.macroPercentage,
-            { color: isExceeded ? colors.alert : color },
-          ]}
-        >
-          {percentage}%
-        </Text>
-      </View>
-
-      {/* Progress bar */}
-      <View style={styles.macroBarTrack}>
-        <View
-          style={[
-            styles.macroBarFill,
-            {
-              width: `${progressPercent}%`,
-              backgroundColor: isExceeded ? colors.alert : color,
-            },
-          ]}
-        />
-      </View>
-
-      {/* Values */}
-      <Text style={styles.macroValue}>
-        <Text style={styles.macroConsumed}>{consumed}g</Text>
-        <Text style={styles.macroGoal}> / {goal}g</Text>
-      </Text>
-
-      <Text style={[styles.macroRemaining, isExceeded && styles.macroExceeded]}>
-        {isExceeded ? `+${remaining}g over` : `${remaining}g left`}
-      </Text>
-    </View>
-  );
-}
 
 export default function NutritionOverview() {
   const { dailyTotals, goals, remainingMacros, percentages } = useNutrition();
@@ -103,7 +32,7 @@ export default function NutritionOverview() {
 
             <View>
               <Text style={styles.title}>Nutrition</Text>
-              <Text style={styles.subtitle}>Today's progress</Text>
+              <Text style={styles.subtitle}>{"Today's progress"}</Text>
             </View>
           </View>
 
@@ -204,37 +133,28 @@ export default function NutritionOverview() {
         ───────────────────────────── */}
 
         <View style={styles.macroSection}>
-          <MacroItem
+          <MacroProgressItem
             label="Protein"
             consumed={dailyTotals.protein}
             goal={goals.protein}
-            remaining={remainingMacros.protein}
-            isExceeded={remainingMacros.isProteinExceeded}
-            percentage={percentages.protein}
             color={colors.protein}
           />
 
           <View style={styles.macroDivider} />
 
-          <MacroItem
+          <MacroProgressItem
             label="Carbs"
             consumed={dailyTotals.carbs}
             goal={goals.carbs}
-            remaining={remainingMacros.carbs}
-            isExceeded={remainingMacros.isCarbsExceeded}
-            percentage={percentages.carbs}
             color={colors.carbs}
           />
 
           <View style={styles.macroDivider} />
 
-          <MacroItem
+          <MacroProgressItem
             label="Fat"
             consumed={dailyTotals.fat}
             goal={goals.fat}
-            remaining={remainingMacros.fat}
-            isExceeded={remainingMacros.isFatExceeded}
-            percentage={percentages.fat}
             color={colors.fat}
           />
         </View>
@@ -440,88 +360,12 @@ const styles = StyleSheet.create({
   macroSection: {
     flexDirection: "row",
     alignItems: "stretch",
-  },
-
-  macroItem: {
-    flex: 1,
-    minWidth: 0,
+    gap: 12,
   },
 
   macroDivider: {
     width: 1,
     backgroundColor: colors.surfaceBorder,
-    marginHorizontal: 12,
-  },
-
-  macroHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 7,
-  },
-
-  macroLabel: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    flexShrink: 1,
-  },
-
-  colorDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-
-  macroName: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: colors.text,
-  },
-
-  macroPercentage: {
-    fontSize: 10,
-    fontWeight: "800",
-    marginLeft: 3,
-  },
-
-  macroBarTrack: {
-    height: 6,
-    width: "100%",
-    backgroundColor: colors.surfaceLight,
-    borderRadius: 3,
-    overflow: "hidden",
-    marginBottom: 7,
-  },
-
-  macroBarFill: {
-    height: "100%",
-    borderRadius: 3,
-  },
-
-  macroValue: {
-    fontSize: 11,
-    marginBottom: 1,
-  },
-
-  macroConsumed: {
-    fontWeight: "800",
-    color: colors.text,
-  },
-
-  macroGoal: {
-    fontWeight: "500",
-    color: colors.textMuted,
-  },
-
-  macroRemaining: {
-    fontSize: 9,
-    color: colors.textMuted,
-    fontWeight: "500",
-  },
-
-  macroExceeded: {
-    color: colors.alert,
-    fontWeight: "700",
+    marginVertical: 4,
   },
 });

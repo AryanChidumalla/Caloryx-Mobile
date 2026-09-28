@@ -79,7 +79,7 @@ export default function SearchDatabase({
           <Text style={styles.emptySearchTitle}>No matching food found</Text>
 
           <Text style={styles.emptySearchText}>
-            Can't find this food in the database? Create a custom entry.
+            {"Can't find this food in the database? Create a custom entry."}
           </Text>
 
           <TouchableOpacity
